@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PieChart">
+        <attr name="viewBackgroundColor" format="integer" />
+        <attr name="strokeColor" format="integer"/>
+        <attr name="strokeSize" format="float" />
+        <attr name="strokeStyle" format="integer">
+            <enum name="FILL" value="0"/>
+            <enum name="FILL_AND_STROKE" value="1"/>
+            <enum name="STROKE" value="1"/>
+        </attr>
+
+    </declare-styleable>
+</resources>
