@@ -59,6 +59,10 @@ public class FabricView extends View {
     // Vars to decrease dirty area and increase performance
     private float lastTouchX, lastTouchY;
     private final RectF dirtyRect = new RectF();
+    
+    // keep track of path and paint being in use
+    CPath currentPath;
+    Paint currentPaint;
 
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
@@ -77,10 +81,7 @@ public class FabricView extends View {
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
-    //private const
     public static final int NOTEBOOK_LEFT_LINE_PADDING = 120;
-    CPath currentPath;
-    Paint currentPaint;
 
     /*********************************************************************************************/
     /************************************     TO-DOs    ******************************************/
