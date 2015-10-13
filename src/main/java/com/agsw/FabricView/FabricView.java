@@ -20,8 +20,7 @@ import java.util.ArrayList;
 import static android.graphics.Bitmap.createScaledBitmap;
 
 /**
- * Created by antwan on 10/3/2015.
- * A library for creating graphics on an object model on top of canvas.
+ * A view that allows for creating graphics on an object model on top of canvas.
  */
 public class FabricView extends View {
 
@@ -88,7 +87,7 @@ public class FabricView extends View {
     /*********************************************************************************************/
     private float mZoomLevel = 1.0f; //TODO Support Zoom
     private float mHorizontalOffset = 1, mVerticalOffset = 1; // TODO Support Offset and Viewport
-    public int mAutoscrollDistance = 100; // TODO Support Autoscroll
+    private int mAutoscrollDistance = 100; // TODO Support Autoscroll
 
     /**
      * Default Constructor, sets sane values.
