@@ -6,6 +6,7 @@ android:
       - tools
       - platform-tools
       - extra-android-support
+      - extra-android-m2repository
  
   script:
       - ./gradlew build connectedCheck
