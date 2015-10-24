@@ -6,7 +6,7 @@ A new canvas drawing library for Android. The library was born as part of a proj
 ### Sample Screen Recording
 ![Screenshot1](http://i.imgur.com/9nME9Yt.gif)
 
-### 0.1 Milestones
+### 0.1 Milestone
  * Multiple Input Colors - DONE ✓
  * Performance (Redraw only parts of the screen that need to be redrawn) - DONE ✓
  * Undo/Redo Support
