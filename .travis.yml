@@ -15,3 +15,7 @@ android:
       - pip install codecov
   after_success:
       - codecov
+  cache:
+    directories:
+        - $HOME/.gradle
+        - $HOME/.m2/repository
