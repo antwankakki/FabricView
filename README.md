@@ -12,7 +12,6 @@ A new canvas drawing library for Android. The library was born as part of a proj
   
      ```javascript
       repositories {
-        // ...
         maven { url "https://jitpack.io" }
        }
      ```
