@@ -39,6 +39,7 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
  * Multiple Input Colors - DONE ✓
  * Performance (Redraw only parts of the screen that need to be redrawn) - DONE ✓
  * Background Support - Done ✓
+ * Images support - Done ✓ (Thanks [dbachelder](https://github.com/dbachelder))
  * Undo/Redo Support
  * Drawing Text captured directly from keyboard.
  * Allowing Resize when inserting images.
