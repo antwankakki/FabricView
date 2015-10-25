@@ -1,4 +1,4 @@
-# FabricView - [![Build Status](https://travis-ci.org/antwankakki/FabricView.svg?branch=master)](https://travis-ci.org/antwankakki/FabricView)
+# FabricView - [![Build Status](https://travis-ci.org/antwankakki/FabricView.svg?branch=master)](https://travis-ci.org/antwankakki/FabricView) [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-FabricView-blue.svg?style=flat)](http://android-arsenal.com/details/1/2616)
 
 A new canvas drawing library for Android. The library was born as part of a project in SD Hacks (www.sdhacks.io) on October 3rd. It is currently under construction and will be refactored and polished in the coming weeks! Stay tuned.
 
