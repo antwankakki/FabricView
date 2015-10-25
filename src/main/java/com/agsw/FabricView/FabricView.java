@@ -11,13 +11,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
 
 import java.util.ArrayList;
-
-import static android.graphics.Bitmap.createScaledBitmap;
 
 /**
  * Created by antwan on 10/3/2015.
@@ -385,11 +384,11 @@ public class FabricView extends View {
      * @param pic    the image itself
      */
     public void drawImage(int x, int y, int width, int height, Bitmap pic) {
-        // get the scaled version
-        pic = createScaledBitmap(pic, width, height, true);
-
-        // add it to the image draw
-        //TODO: Implement the method
+        CBitmap bitmap = new CBitmap(pic, x, y);
+        bitmap.setWidth(width);
+        bitmap.setHeight(height);
+        mDrawableList.add(bitmap);
+        invalidate();
     }
 
 
