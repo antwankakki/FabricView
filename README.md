@@ -7,7 +7,8 @@ A new canvas drawing library for Android. The library was born as part of a proj
 ### Sample Screen Recording
 ![Screenshot1](http://i.imgur.com/9nME9Yt.gif)
 
-### How to use?
+### How to use? As easy as 1, 2, 3!
+  0. Please note this is an alpha build, not feature complete, and can be buggy. If you find any bugs, report them to us here pelase! 
   1. Add JitPack to your build.gradle at the end of repositories
   
      ```javascript
