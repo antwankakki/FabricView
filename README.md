@@ -19,10 +19,9 @@ A new canvas drawing library for Android. The library was born as part of a proj
   2. Add FabricView to your dependencies
     
      ```javascript
-      repositories {
-        // ...
-        maven { url "https://jitpack.io" }
-       }
+       	dependencies {
+       	        compile 'com.github.antwankakki:FabricView:-SNAPSHOT'
+       	}
      ```
   3. Add the following to your layout xml file
   
