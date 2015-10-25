@@ -71,10 +71,10 @@ public class FabricView extends View {
     public static final int BACKGROUND_STYLE_GRAPH_PAPER = 2;
 
     // Interactive Modes
-    private static final int DRAW_MODE = 0;
-    private static final int SELECT_MODE = 1; // TODO Support Object Selection.
-    private static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
-    private static final int LOCKED_MODE = 3;
+    public static final int DRAW_MODE = 0;
+    public static final int SELECT_MODE = 1; // TODO Support Object Selection.
+    public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
+    public static final int LOCKED_MODE = 3;
 
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
