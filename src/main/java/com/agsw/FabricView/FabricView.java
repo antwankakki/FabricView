@@ -11,13 +11,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
 
 import java.util.ArrayList;
-
-import static android.graphics.Bitmap.createScaledBitmap;
 
 /**
  * Created by antwan on 10/3/2015.
@@ -30,7 +29,6 @@ public class FabricView extends View {
     /*********************************************************************************************/
     // painting objects and properties
     private ArrayList<CDrawable> mDrawableList = new ArrayList<CDrawable>();
-    int id = 0;     // each path will have its properties
     private int mColor = Color.BLACK;
 
     // Canvas interaction modes
@@ -73,10 +71,10 @@ public class FabricView extends View {
     public static final int BACKGROUND_STYLE_GRAPH_PAPER = 2;
 
     // Interactive Modes
-    private static final int DRAW_MODE = 0;
-    private static final int SELECT_MODE = 1; // TODO Support Object Selection.
-    private static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
-    private static final int LOCKED_MODE = 3;
+    public static final int DRAW_MODE = 0;
+    public static final int SELECT_MODE = 1; // TODO Support Object Selection.
+    public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
+    public static final int LOCKED_MODE = 3;
 
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
@@ -106,7 +104,6 @@ public class FabricView extends View {
 
     /**
      * Called when there is the canvas is being re-drawn.
-     * @param canvas
      */
     @Override
     protected void onDraw(Canvas canvas) {
@@ -138,7 +135,7 @@ public class FabricView extends View {
         else if (getInteractionMode() == SELECT_MODE)
             return onTouchSelectMode(event);
         else if (getInteractionMode() == ROTATE_MODE)
-            return onTouchRotatetMode(event);
+            return onTouchRotateMode(event);
         // if none of the above are selected, delegate to locked mode
         else
             return onTouchLockedMode(event);
@@ -147,7 +144,7 @@ public class FabricView extends View {
     /**
      * Handles touch event if the mode is set to locked
      * @param event the event to handle
-     * @return false, shouldnt do anything with it for now
+     * @return false, shouldn't do anything with it for now
      */
     private boolean onTouchLockedMode(MotionEvent event) {
         // return false since we don't want to do anything so far
@@ -159,7 +156,7 @@ public class FabricView extends View {
      * @param event the touch event
      * @return the result of the action
      */
-    private boolean onTouchRotatetMode(MotionEvent event) {
+    private boolean onTouchRotateMode(MotionEvent event) {
         return false;
     }
 
@@ -240,7 +237,6 @@ public class FabricView extends View {
     /**
      * Handles the touch input if the mode is set to select
      * @param event the touch event
-     * @return
      */
     private boolean onTouchSelectMode(MotionEvent event) {
         // TODO Implement Method
@@ -254,22 +250,24 @@ public class FabricView extends View {
     /**
      * Draw the background on the canvas
      * @param canvas the canvas to draw on
-     * @param backgroundMode
+     * @param backgroundMode one of BACKGROUND_STYLE_GRAPH_PAPER, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_BLANK
      */
     public void drawBackground(Canvas canvas, int backgroundMode) {
-        Paint linePaint = new Paint();
-        linePaint.setColor(Color.argb(50, 0, 0, 0));
-        linePaint.setStyle(mStyle);
-        linePaint.setStrokeJoin(Paint.Join.ROUND);
-        linePaint.setStrokeWidth(mSize - 2f);
-        switch (backgroundMode) {
-            case BACKGROUND_STYLE_GRAPH_PAPER:
-                drawGraphPaperBackground(canvas, linePaint);
-                break;
-            case BACKGROUND_STYLE_NOTEBOOK_PAPER:
-                drawNotebookPaperBackground(canvas, linePaint);
-            default:
-                break;
+        if(backgroundMode != BACKGROUND_STYLE_BLANK) {
+            Paint linePaint = new Paint();
+            linePaint.setColor(Color.argb(50, 0, 0, 0));
+            linePaint.setStyle(mStyle);
+            linePaint.setStrokeJoin(Paint.Join.ROUND);
+            linePaint.setStrokeWidth(mSize - 2f);
+            switch (backgroundMode) {
+                case BACKGROUND_STYLE_GRAPH_PAPER:
+                    drawGraphPaperBackground(canvas, linePaint);
+                    break;
+                case BACKGROUND_STYLE_NOTEBOOK_PAPER:
+                    drawNotebookPaperBackground(canvas, linePaint);
+                default:
+                    break;
+            }
         }
         mRedrawBackground = false;
     }
@@ -342,7 +340,7 @@ public class FabricView extends View {
 
     /**
      * Capture Text from the keyboard and draw it on the screen
-     * //TODO Imeplement the method
+     * //TODO Implement the method
      */
     private void drawTextFromKeyboard() {
         Toast.makeText(getContext(), "Touch where you want the text to be", Toast.LENGTH_LONG).show();
@@ -385,11 +383,11 @@ public class FabricView extends View {
      * @param pic    the image itself
      */
     public void drawImage(int x, int y, int width, int height, Bitmap pic) {
-        // get the scaled version
-        pic = createScaledBitmap(pic, width, height, true);
-
-        // add it to the image draw
-        //TODO: Implement the method
+        CBitmap bitmap = new CBitmap(pic, x, y);
+        bitmap.setWidth(width);
+        bitmap.setHeight(height);
+        mDrawableList.add(bitmap);
+        invalidate();
     }
 
 

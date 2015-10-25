@@ -13,6 +13,10 @@ public class CBitmap implements CDrawable {
     private Paint mPaint;
     private int mRotDegree;
 
+    public CBitmap(Bitmap src, int x, int y) {
+        this(src, x, y, null);
+    }
+
     public CBitmap(Bitmap src, int x, int y, Paint p) {
         mBitmap = src;
         setXcoords(x);
