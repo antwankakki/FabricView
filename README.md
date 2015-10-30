@@ -37,6 +37,8 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
 
 ### 0.1 Milestone Progress
  * Multiple Input Colors - DONE ✓
+ * Multiple standard background modes (Notebook style, Graph paper...) - DONE ✓
+ * Export canvas as image - DONE ✓ 
  * Performance (Redraw only parts of the screen that need to be redrawn) - DONE ✓
  * Background Support - Done ✓
  * Images support - Done ✓ (Thanks [dbachelder](https://github.com/dbachelder))
