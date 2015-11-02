@@ -45,3 +45,10 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
  * Undo/Redo Support
  * Drawing Text captured directly from keyboard.
  * Allowing Resize when inserting images.
+ * onCanvasChanged Event
+ * 
+ 
+### Future plans
+ * Layers and Groups
+ * More complex objects
+ * Transparency 
