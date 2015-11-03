@@ -36,19 +36,23 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
   4. You are done! You can now reference it in your classes and do all kinds of cool things with it. Check out the api to see what it can do at http://antwankakki.github.io/FabricView/javadoc/
 
 ### 0.1 Milestone Progress
- * Multiple Input Colors - DONE ✓
- * Multiple standard background modes (Notebook style, Graph paper...) - DONE ✓
- * Export canvas as image - DONE ✓ 
- * Performance (Redraw only parts of the screen that need to be redrawn) - DONE ✓
- * Background Support - DONE ✓
- * Images support - DONE ✓ (Thanks [dbachelder](https://github.com/dbachelder))
- * Undo/Redo Support
- * Drawing Text captured directly from keyboard.
- * Allowing Resize when inserting images.
- * onCanvasChanged Event
+ * Multiple Input Colors
+ * Multiple standard background modes (Notebook style, Graph paper...)
+ * Export canvas as image
+ * Performance (Redraw only parts of the screen that need to be redrawn)
+ * Background Support
+ * Images support
+ * Undo/Redo Support - ToDo
+ * Drawing Text captured directly from keyboard. - ToDo
+ * Allowing Resize when inserting images. - ToDo
+ * onCanvasChanged Event - ToDo
  
  
 ### Future plans
  * Layers and Groups
  * More complex objects
  * Transparency 
+
+### Thanks to...
+ * Image support [dbachelder](https://github.com/dbachelder)
+ * getCanvasBitmap bugfix [eling13](https://github.com/eling13)
