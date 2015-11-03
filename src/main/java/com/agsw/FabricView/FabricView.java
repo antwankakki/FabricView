@@ -2,6 +2,7 @@ package com.agsw.FabricView;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -100,6 +101,7 @@ public class FabricView extends View {
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
+
     }
 
     /**
@@ -112,7 +114,14 @@ public class FabricView extends View {
 
         // go through each item in the list and draw it
         for (int i = 0; i < mDrawableList.size(); i++) {
-            mDrawableList.get(i).draw(canvas);
+            try {
+                mDrawableList.get(i).draw(canvas);
+            }
+
+            catch(Exception ex)
+            {
+
+            }
         }
     }
 
@@ -253,6 +262,7 @@ public class FabricView extends View {
      * @param backgroundMode one of BACKGROUND_STYLE_GRAPH_PAPER, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_BLANK
      */
     public void drawBackground(Canvas canvas, int backgroundMode) {
+        canvas.drawColor(mBackgroundColor);
         if(backgroundMode != BACKGROUND_STYLE_BLANK) {
             Paint linePaint = new Paint();
             linePaint.setColor(Color.argb(50, 0, 0, 0));
@@ -394,6 +404,23 @@ public class FabricView extends View {
     /*******************************************
      * Getters and Setters
      ******************************************/
+
+
+    /**
+     * Gets what has been drawn on the canvas so far as a bitmap
+     * @return Bitmap of the canvas.
+     */
+    public Bitmap getCanvasBitmap()
+    {
+        // build drawing cache of the canvas, use it to create a new bitmap, then destroy it.
+        buildDrawingCache();
+        Bitmap mCanvasBitmap = Bitmap.createBitmap(getDrawingCache());
+        destroyDrawingCache();
+
+        // return the created bitmap.
+        return mCanvasBitmap;
+    }
+
     public int getColor() {
         return mColor;
     }
@@ -412,6 +439,7 @@ public class FabricView extends View {
 
     public void setBackgroundMode(int mBackgroundMode) {
         this.mBackgroundMode = mBackgroundMode;
+        invalidate();
     }
 
     public void setBackgroundColor(int mBackgroundColor) {
@@ -449,5 +477,6 @@ public class FabricView extends View {
 
         this.mInteractionMode = interactionMode;
     }
+
 
 }
