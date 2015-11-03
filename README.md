@@ -37,9 +37,18 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
 
 ### 0.1 Milestone Progress
  * Multiple Input Colors - DONE ✓
+ * Multiple standard background modes (Notebook style, Graph paper...) - DONE ✓
+ * Export canvas as image - DONE ✓ 
  * Performance (Redraw only parts of the screen that need to be redrawn) - DONE ✓
- * Background Support - Done ✓
- * Images support - Done ✓ (Thanks [dbachelder](https://github.com/dbachelder))
+ * Background Support - DONE ✓
+ * Images support - DONE ✓ (Thanks [dbachelder](https://github.com/dbachelder))
  * Undo/Redo Support
  * Drawing Text captured directly from keyboard.
  * Allowing Resize when inserting images.
+ * onCanvasChanged Event
+ 
+ 
+### Future plans
+ * Layers and Groups
+ * More complex objects
+ * Transparency 

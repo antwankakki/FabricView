@@ -477,6 +477,22 @@ public class FabricView extends View {
 
         this.mInteractionMode = interactionMode;
     }
+    
+    /**
+     * Gets what has been drawn on the canvas so far as a bitmap
+     * @return Bitmap of the canvas.
+     */
+    public Bitmap getCanvasBitmap()
+    {
+        // build drawing cache of the canvas, use it to create a new bitmap, then destroy it.
+        buildDrawingCache();
+        Bitmap mCanvasBitmap = Bitmap.createBitmap(getDrawingCache());
+        destroyDrawingCache();
+
+        // return the created bitmap.
+        return mCanvasBitmap;
+    }
+
 
 
 }
