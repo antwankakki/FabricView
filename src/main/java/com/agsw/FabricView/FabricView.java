@@ -13,7 +13,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.agsw.FabricView.DrawableCommend.CLineCommend;
 import com.agsw.FabricView.DrawableCommend.CPathCommend;
+import com.agsw.FabricView.DrawableCommend.CRectangleCommend;
 import com.agsw.FabricView.DrawableCommend.Commend;
 import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
@@ -85,7 +87,8 @@ public class FabricView extends View {
     public static final int SELECT_MODE = 1; // TODO Support Object Selection.
     public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
     public static final int LOCKED_MODE = 3;
-
+    public static final int DRAW_RECTANGLE = 4;//画矩形
+    public static final int DRAW_STRAIGHT_LINE = 5;//画直线
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
@@ -110,7 +113,7 @@ public class FabricView extends View {
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
-
+        mCommend = new CPathCommend(createNewPaint(), startPoint, endPoint);
     }
 
     /**
@@ -531,7 +534,13 @@ public class FabricView extends View {
 //        this.mInteractionMode = interactionMode;
         switch (interactionMode) {
             case DRAW_MODE:
-                mCommend = new CPathCommend(createNewPaint(), false, startPoint, endPoint);
+                mCommend = new CPathCommend(createNewPaint(), startPoint, endPoint);
+                break;
+            case DRAW_RECTANGLE:
+                mCommend = new CRectangleCommend(createNewPaint(), startPoint, endPoint);
+                break;
+            case DRAW_STRAIGHT_LINE:
+                mCommend = new CLineCommend(createNewPaint(), startPoint, endPoint);
                 break;
             case SELECT_MODE:
             case ROTATE_MODE:

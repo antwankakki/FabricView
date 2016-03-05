@@ -23,9 +23,9 @@ public class CPathCommend implements Commend {
 
     public CPathCommend(Paint paint, boolean isStraightLine, Point startPoint, Point endPoint) {
         mPaint = paint;
-        this.isStraightLine = isStraightLine;
         mStartPoint = startPoint;
         mEndPoint = endPoint;
+        this.isStraightLine = isStraightLine;
     }
 
     @Override
@@ -40,15 +40,21 @@ public class CPathCommend implements Commend {
                 // create new path and paint
 
                 mPath = new CPath(mPaint);
-                mStartPoint.set((int)eventX , (int)eventY);
+                mStartPoint.set((int) eventX, (int) eventY);
                 mPath.moveTo(eventX, eventY);
                 mDrawableList.add(mPath);
                 break;
             case MotionEvent.ACTION_MOVE:
             case MotionEvent.ACTION_UP:
-                if (!isStraightLine)
+                mEndPoint.set((int) eventX, (int) eventY);
+                if (!isStraightLine) {
                     mPath.lineTo(eventX, eventY);
-                mEndPoint.set((int)eventX , (int)eventY);
+                } else {
+                    mPath.reset();
+                    mPath.moveTo(mStartPoint.x, mStartPoint.y);
+                    mPath.lineTo(eventX, eventY);
+                }
+
                 break;
         }
     }

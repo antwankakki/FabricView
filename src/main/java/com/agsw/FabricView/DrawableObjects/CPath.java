@@ -74,5 +74,9 @@ public class CPath implements CDrawable {
     public void moveTo(float eventX, float eventY) {
         mPath.moveTo(eventX, eventY);
     }
+
+    public void reset() {
+        mPath.reset();
+    }
 }
 
