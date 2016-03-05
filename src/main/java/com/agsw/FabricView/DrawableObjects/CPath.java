@@ -12,8 +12,14 @@ public class CPath implements CDrawable {
     private Path mPath;
     private Paint mPaint;
     private int mRotDegree;
+
     public CPath() {
         mPath = new Path();
+    }
+
+    public CPath(Paint paint) {
+        this();
+        mPaint = paint;
     }
 
     @Override
