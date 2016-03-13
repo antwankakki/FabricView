@@ -23,6 +23,7 @@ import com.agsw.FabricView.DrawableObjects.CText;
 
 import java.util.ArrayList;
 
+
 /**
  * Created by antwan on 10/3/2015.
  * A library for creating graphics on an object model on top of canvas.
@@ -86,8 +87,8 @@ public class FabricView extends View {
     public static final int SELECT_MODE = 1; // TODO Support Object Selection.
     public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
     public static final int LOCKED_MODE = 3;
-    public static final int DRAW_RECTANGLE = 4;//画矩形
-    public static final int DRAW_STRAIGHT_LINE = 5;//画直线
+    public static final int DRAW_RECTANGLE_MODE = 6;//draw rectangle
+    public static final int DRAW_STRAIGHT_LINE = 5;//画直线  draw line
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
@@ -112,7 +113,8 @@ public class FabricView extends View {
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
-        mCommend = new CPathCommend(createNewPaint(), false, startPoint, endPoint);
+        initPaint();
+        mCommend = new CPathCommend(currentPaint, false, startPoint, endPoint);
     }
 
     /**
@@ -148,20 +150,15 @@ public class FabricView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         // delegate action to the correct method
 
-        switch (mInteractionMode) {
-            case DRAW_MODE:
-                mCommend.onTouchEvent(mDrawableList, event);
-                calculateDirtyRegion();
-                // Include some padding to ensure nothing is clipped
-                invalidate(
-                        (int) (dirtyRect.left - 20),
-                        (int) (dirtyRect.top - 20),
-                        (int) (dirtyRect.right + 20),
-                        (int) (dirtyRect.bottom + 20));
-                return true;
-            default:
-                return false;
-        }
+        mCommend.onTouchEvent(mDrawableList, event);
+        calculateDirtyRegion();
+        // Include some padding to ensure nothing is clipped
+        invalidate(
+                (int) (dirtyRect.left - 20),
+                (int) (dirtyRect.top - 20),
+                (int) (dirtyRect.right + 20),
+                (int) (dirtyRect.bottom + 20));
+        return true;
 //        if (getInteractionMode() == DRAW_MODE)
 //            return onTouchDrawMode(event);
 //        else if (getInteractionMode() == SELECT_MODE)
@@ -173,14 +170,13 @@ public class FabricView extends View {
 //            return onTouchLockedMode(event);
     }
 
-    private Paint createNewPaint() {
+    private void initPaint() {
         currentPaint = new Paint();
         currentPaint.setAntiAlias(true);
         currentPaint.setColor(mColor);
         currentPaint.setStyle(mStyle);
         currentPaint.setStrokeJoin(Paint.Join.ROUND);
         currentPaint.setStrokeWidth(mSize);
-        return currentPaint;
     }
 
     /**
@@ -221,7 +217,6 @@ public class FabricView extends View {
             case MotionEvent.ACTION_DOWN:
                 // create new path and paint
                 currentPath = new CPath();
-                createNewPaint();
                 currentPath.moveTo(eventX, eventY);
                 currentPath.setPaint(currentPaint);
                 // capture touched locations
@@ -476,11 +471,11 @@ public class FabricView extends View {
     }
 
     public int getColor() {
-        return mColor;
+        return currentPaint.getColor();
     }
 
     public void setColor(int mColor) {
-        this.mColor = mColor;
+        currentPaint.setColor(mColor);
     }
 
     public int getBackgroundColor() {
@@ -501,19 +496,19 @@ public class FabricView extends View {
     }
 
     public Paint.Style getStyle() {
-        return mStyle;
+        return currentPaint.getStyle();
     }
 
     public void setStyle(Paint.Style mStyle) {
-        this.mStyle = mStyle;
+        currentPaint.setStyle(mStyle);
     }
 
     public float getSize() {
-        return mSize;
+        return currentPaint.getStrokeWidth();
     }
 
     public void setSize(float mSize) {
-        this.mSize = mSize;
+        currentPaint.setStrokeWidth(mSize);
     }
 
 
@@ -533,13 +528,13 @@ public class FabricView extends View {
 //        this.mInteractionMode = interactionMode;
         switch (interactionMode) {
             case DRAW_MODE:
-                mCommend = new CPathCommend(createNewPaint(), false, startPoint, endPoint);
+                mCommend = new CPathCommend(currentPaint, false, startPoint, endPoint);
                 break;
-            case DRAW_RECTANGLE:
-                mCommend = new CRectangleCommend(createNewPaint(), startPoint, endPoint);
+            case DRAW_RECTANGLE_MODE:
+                mCommend = new CRectangleCommend(currentPaint, startPoint, endPoint);
                 break;
             case DRAW_STRAIGHT_LINE:
-                mCommend = new CPathCommend(createNewPaint(), true, startPoint, endPoint);
+                mCommend = new CPathCommend(currentPaint, true, startPoint, endPoint);
                 break;
             case SELECT_MODE:
             case ROTATE_MODE:
