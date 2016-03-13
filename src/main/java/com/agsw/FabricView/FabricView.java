@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
-import com.agsw.FabricView.DrawableCommend.CLineCommend;
 import com.agsw.FabricView.DrawableCommend.CPathCommend;
 import com.agsw.FabricView.DrawableCommend.CRectangleCommend;
 import com.agsw.FabricView.DrawableCommend.Commend;
@@ -113,7 +112,7 @@ public class FabricView extends View {
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
-        mCommend = new CPathCommend(createNewPaint(), startPoint, endPoint);
+        mCommend = new CPathCommend(createNewPaint(), false, startPoint, endPoint);
     }
 
     /**
@@ -534,13 +533,13 @@ public class FabricView extends View {
 //        this.mInteractionMode = interactionMode;
         switch (interactionMode) {
             case DRAW_MODE:
-                mCommend = new CPathCommend(createNewPaint(), startPoint, endPoint);
+                mCommend = new CPathCommend(createNewPaint(), false, startPoint, endPoint);
                 break;
             case DRAW_RECTANGLE:
                 mCommend = new CRectangleCommend(createNewPaint(), startPoint, endPoint);
                 break;
             case DRAW_STRAIGHT_LINE:
-                mCommend = new CLineCommend(createNewPaint(), startPoint, endPoint);
+                mCommend = new CPathCommend(createNewPaint(), true, startPoint, endPoint);
                 break;
             case SELECT_MODE:
             case ROTATE_MODE:

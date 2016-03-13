@@ -39,7 +39,7 @@ public class CPathCommend implements Commend {
             case MotionEvent.ACTION_DOWN:
                 // create new path and paint
 
-                mPath = new CPath(mPaint);
+                mPath = new CPath(new Paint(mPaint));
                 mStartPoint.set((int) eventX, (int) eventY);
                 mPath.moveTo(eventX, eventY);
                 mDrawableList.add(mPath);
