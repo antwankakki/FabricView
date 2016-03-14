@@ -8,7 +8,7 @@ import android.graphics.Paint;
  * Created by antwan on 10/3/2015.
  */
 public class CBitmap implements CDrawable {
-    private int x = 0, y = 0, height, width;
+    private int x, y, height, width;
     private Bitmap mBitmap;
     private Paint mPaint;
     private int mRotDegree;

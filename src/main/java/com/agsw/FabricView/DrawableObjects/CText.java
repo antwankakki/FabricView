@@ -9,7 +9,7 @@ import android.graphics.Paint;
 public class CText implements CDrawable {
     private String mText;
     private Paint mPaint;
-    private int x = 0, y = 0, mRotDegree = 0;
+    private int x, y, mRotDegree;
 
     public CText(String s, int x, int y, Paint p) {
         setText(s);
