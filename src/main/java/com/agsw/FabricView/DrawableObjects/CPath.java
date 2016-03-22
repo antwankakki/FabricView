@@ -8,7 +8,7 @@ import android.graphics.Path;
  * Created by antwan on 10/3/2015.
  */
 public class CPath implements CDrawable {
-    private int x, y, height, width;
+    private int x, y;
     private Path mPath;
     private Paint mPaint;
     private int mRotDegree;
