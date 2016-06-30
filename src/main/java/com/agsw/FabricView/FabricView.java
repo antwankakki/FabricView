@@ -29,7 +29,7 @@ public class FabricView extends View {
     /*************************************     Vars    *******************************************/
     /*********************************************************************************************/
     // painting objects and properties
-    private ArrayList<CDrawable> mDrawableList = new ArrayList<CDrawable>();
+    private ArrayList<CDrawable> mDrawableList = new ArrayList<>();
     private int mColor = Color.BLACK;
 
     // Canvas interaction modes
@@ -50,7 +50,7 @@ public class FabricView extends View {
     private int mBackgroundMode = BACKGROUND_STYLE_BLANK;
 
     // Default Notebook left line color
-    public int NOTEBOOK_LEFT_LINE_COLOR = Color.RED;
+    public static final int NOTEBOOK_LEFT_LINE_COLOR = Color.RED;
 
     // Flag indicating that we are waiting for a location for the text
     private boolean mTextExpectTouch;
