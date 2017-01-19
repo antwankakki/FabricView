@@ -12,15 +12,21 @@ Please note this is an alpha build, not feature complete, and can be buggy. If y
   1. Add JitPack to your build.gradle at the end of repositories
   
      ```javascript
-      repositories {
-        maven { url "https://jitpack.io" }
-       }
+    allprojects {
+        repositories {
+            jcenter()
+            maven { url "https://jitpack.io" }
+            ...
+        }
+    }
      ```
   2. Add FabricView to your dependencies
     
      ```javascript
        	dependencies {
-       	        compile 'com.github.antwankakki:FabricView:-SNAPSHOT'
+                compile fileTree(include: ['*.jar'], dir: 'libs')
+       	        compile 'com.github.antwankakki:FabricView:latest'
+                ...
        	}
      ```
   3. Add the following to your layout xml file
