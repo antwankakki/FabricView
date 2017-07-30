@@ -30,6 +30,7 @@ public class FabricView extends View {
     /*********************************************************************************************/
     // painting objects and properties
     private ArrayList<CDrawable> mDrawableList = new ArrayList<>();
+    private ArrayList<CDrawable> mUndoList = new ArrayList<>();
     private int mColor = Color.BLACK;
 
     // Canvas interaction modes
@@ -369,6 +370,28 @@ public class FabricView extends View {
         dirtyRect.right = Math.max(lastTouchX, eventX);
         dirtyRect.top = Math.min(lastTouchY, eventY);
         dirtyRect.bottom = Math.max(lastTouchY, eventY);
+    }
+
+
+
+    public void undo() {
+        if (mDrawableList.size() > 0) {
+
+            mUndoList.add(mDrawableList.get(mDrawableList.size()-1));
+            mDrawableList.remove(mDrawableList.size()-1);
+
+            invalidate();
+        }
+    }
+
+    public void redo() {
+        if (mUndoList.size() > 0) {
+
+            mDrawableList.add(mUndoList.get(mUndoList.size()-1));
+            mUndoList.remove(mUndoList.size()-1);
+
+            invalidate();
+        }
     }
 
     /**
