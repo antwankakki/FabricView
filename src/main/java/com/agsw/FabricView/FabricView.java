@@ -6,18 +6,23 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.agsw.FabricView.DrawableCommend.CPathCommend;
+import com.agsw.FabricView.DrawableCommend.CRectangleCommend;
+import com.agsw.FabricView.DrawableCommend.Commend;
 import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
 
 import java.util.ArrayList;
+
 
 /**
  * Created by antwan on 10/3/2015.
@@ -59,10 +64,16 @@ public class FabricView extends View {
     // Vars to decrease dirty area and increase performance
     private float lastTouchX, lastTouchY;
     private final RectF dirtyRect = new RectF();
-    
+
     // keep track of path and paint being in use
     CPath currentPath;
     Paint currentPaint;
+
+
+    private Commend mCommend;
+    private Point startPoint = new Point();
+    private Point endPoint = new Point();
+
 
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
@@ -77,7 +88,8 @@ public class FabricView extends View {
     public static final int SELECT_MODE = 1; // TODO Support Object Selection.
     public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
     public static final int LOCKED_MODE = 3;
-
+    public static final int DRAW_RECTANGLE_MODE = 6;//draw rectangle
+    public static final int DRAW_STRAIGHT_LINE = 5;//画直线  draw line
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
@@ -102,7 +114,8 @@ public class FabricView extends View {
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
-
+        initPaint();
+        mCommend = new CPathCommend(currentPaint, false, startPoint, endPoint);
     }
 
     /**
@@ -117,10 +130,7 @@ public class FabricView extends View {
         for (int i = 0; i < mDrawableList.size(); i++) {
             try {
                 mDrawableList.get(i).draw(canvas);
-            }
-
-            catch(Exception ex)
-            {
+            } catch (Exception ex) {
 
             }
         }
@@ -140,19 +150,39 @@ public class FabricView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // delegate action to the correct method
-        if (getInteractionMode() == DRAW_MODE)
-            return onTouchDrawMode(event);
-        else if (getInteractionMode() == SELECT_MODE)
-            return onTouchSelectMode(event);
-        else if (getInteractionMode() == ROTATE_MODE)
-            return onTouchRotateMode(event);
-        // if none of the above are selected, delegate to locked mode
-        else
-            return onTouchLockedMode(event);
+
+        mCommend.onTouchEvent(mDrawableList, event);
+        calculateDirtyRegion();
+        // Include some padding to ensure nothing is clipped
+        invalidate(
+                (int) (dirtyRect.left - 20),
+                (int) (dirtyRect.top - 20),
+                (int) (dirtyRect.right + 20),
+                (int) (dirtyRect.bottom + 20));
+        return true;
+//        if (getInteractionMode() == DRAW_MODE)
+//            return onTouchDrawMode(event);
+//        else if (getInteractionMode() == SELECT_MODE)
+//            return onTouchSelectMode(event);
+//        else if (getInteractionMode() == ROTATE_MODE)
+//            return onTouchRotateMode(event);
+//             if none of the above are selected, delegate to locked mode
+//        else
+//            return onTouchLockedMode(event);
+    }
+
+    private void initPaint() {
+        currentPaint = new Paint();
+        currentPaint.setAntiAlias(true);
+        currentPaint.setColor(mColor);
+        currentPaint.setStyle(mStyle);
+        currentPaint.setStrokeJoin(Paint.Join.ROUND);
+        currentPaint.setStrokeWidth(mSize);
     }
 
     /**
      * Handles touch event if the mode is set to locked
+     *
      * @param event the event to handle
      * @return false, shouldn't do anything with it for now
      */
@@ -163,6 +193,7 @@ public class FabricView extends View {
 
     /**
      * Handles the touch input if the mode is set to rotate
+     *
      * @param event the touch event
      * @return the result of the action
      */
@@ -173,11 +204,11 @@ public class FabricView extends View {
 
     /**
      * Handles the touch input if the mode is set to draw
+     *
      * @param event the touch event
      * @return the result of the action
      */
-    public boolean onTouchDrawMode(MotionEvent event)
-    {
+    public boolean onTouchDrawMode(MotionEvent event) {
         // get location of touch
         float eventX = event.getX();
         float eventY = event.getY();
@@ -187,12 +218,6 @@ public class FabricView extends View {
             case MotionEvent.ACTION_DOWN:
                 // create new path and paint
                 currentPath = new CPath();
-                currentPaint = new Paint();
-                currentPaint.setAntiAlias(true);
-                currentPaint.setColor(mColor);
-                currentPaint.setStyle(mStyle);
-                currentPaint.setStrokeJoin(Paint.Join.ROUND);
-                currentPaint.setStrokeWidth(mSize);
                 currentPath.moveTo(eventX, eventY);
                 currentPath.setPaint(currentPaint);
                 // capture touched locations
@@ -246,6 +271,7 @@ public class FabricView extends View {
 
     /**
      * Handles the touch input if the mode is set to select
+     *
      * @param event the touch event
      */
     private boolean onTouchSelectMode(MotionEvent event) {
@@ -259,12 +285,13 @@ public class FabricView extends View {
      ******************************************/
     /**
      * Draw the background on the canvas
-     * @param canvas the canvas to draw on
+     *
+     * @param canvas         the canvas to draw on
      * @param backgroundMode one of BACKGROUND_STYLE_GRAPH_PAPER, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_BLANK
      */
     public void drawBackground(Canvas canvas, int backgroundMode) {
         canvas.drawColor(mBackgroundColor);
-        if(backgroundMode != BACKGROUND_STYLE_BLANK) {
+        if (backgroundMode != BACKGROUND_STYLE_BLANK) {
             Paint linePaint = new Paint();
             linePaint.setColor(Color.argb(50, 0, 0, 0));
             linePaint.setStyle(mStyle);
@@ -285,8 +312,9 @@ public class FabricView extends View {
 
     /**
      * Draws a graph paper background on the view
+     *
      * @param canvas the canvas to draw on
-     * @param paint the paint to use
+     * @param paint  the paint to use
      */
     private void drawGraphPaperBackground(Canvas canvas, Paint paint) {
         int i = 0;
@@ -314,8 +342,9 @@ public class FabricView extends View {
 
     /**
      * Draws a notebook paper background on the view
+     *
      * @param canvas the canvas to draw on
-     * @param paint the paint to use
+     * @param paint  the paint to use
      */
     private void drawNotebookPaperBackground(Canvas canvas, Paint paint) {
         int i = 0;
@@ -339,10 +368,11 @@ public class FabricView extends View {
 
     /**
      * Draw text on the screen
+     *
      * @param text the text to draw
-     * @param x the x location of the text
-     * @param y the y location of the text
-     * @param p the paint to use
+     * @param x    the x location of the text
+     * @param y    the y location of the text
+     * @param p    the paint to use
      */
     public void drawText(String text, int x, int y, Paint p) {
         mDrawableList.add(new CText(text, x, y, p));
@@ -360,7 +390,6 @@ public class FabricView extends View {
     }
 
     /**
-     * Retrieve the region needing to be redrawn
      * @param eventX The current x location of the touch
      * @param eventY the current y location of the touch
      */
@@ -391,6 +420,26 @@ public class FabricView extends View {
             mUndoList.remove(mUndoList.size()-1);
 
             invalidate();
+        }
+    }
+
+    /**
+     * Calculate the region needing to be redrawn
+     */
+    private void calculateDirtyRegion() {
+        if (startPoint.x < endPoint.x) {
+            dirtyRect.left = startPoint.x;
+            dirtyRect.right = endPoint.x;
+        } else {
+            dirtyRect.left = endPoint.x;
+            dirtyRect.right = startPoint.x;
+        }
+        if (startPoint.y < endPoint.y) {
+            dirtyRect.top = startPoint.y;
+            dirtyRect.bottom = endPoint.y;
+        } else {
+            dirtyRect.top = endPoint.y;
+            dirtyRect.bottom = startPoint.y;
         }
     }
 
@@ -431,10 +480,10 @@ public class FabricView extends View {
 
     /**
      * Gets what has been drawn on the canvas so far as a bitmap
+     *
      * @return Bitmap of the canvas.
      */
-    public Bitmap getCanvasBitmap()
-    {
+    public Bitmap getCanvasBitmap() {
         // build drawing cache of the canvas, use it to create a new bitmap, then destroy it.
         buildDrawingCache();
         Bitmap mCanvasBitmap = Bitmap.createBitmap(getDrawingCache());
@@ -445,11 +494,11 @@ public class FabricView extends View {
     }
 
     public int getColor() {
-        return mColor;
+        return currentPaint.getColor();
     }
 
     public void setColor(int mColor) {
-        this.mColor = mColor;
+        currentPaint.setColor(mColor);
     }
 
     public int getBackgroundColor() {
@@ -470,19 +519,19 @@ public class FabricView extends View {
     }
 
     public Paint.Style getStyle() {
-        return mStyle;
+        return currentPaint.getStyle();
     }
 
     public void setStyle(Paint.Style mStyle) {
-        this.mStyle = mStyle;
+        currentPaint.setStyle(mStyle);
     }
 
     public float getSize() {
-        return mSize;
+        return currentPaint.getStrokeWidth();
     }
 
     public void setSize(float mSize) {
-        this.mSize = mSize;
+        currentPaint.setStrokeWidth(mSize);
     }
 
 
@@ -490,15 +539,31 @@ public class FabricView extends View {
         return mInteractionMode;
     }
 
+
     public void setInteractionMode(int interactionMode) {
 
         // if the value passed is not any of the flags, set the library to locked mode
-        if (interactionMode > LOCKED_MODE)
-            interactionMode = LOCKED_MODE;
-        else if (interactionMode < DRAW_MODE)
-            interactionMode = LOCKED_MODE;
-
-        this.mInteractionMode = interactionMode;
+//        if (interactionMode > LOCKED_MODE)
+//            interactionMode = LOCKED_MODE;
+//        else if (interactionMode < DRAW_MODE)
+//            interactionMode = LOCKED_MODE;
+//
+//        this.mInteractionMode = interactionMode;
+        switch (interactionMode) {
+            case DRAW_MODE:
+                mCommend = new CPathCommend(currentPaint, false, startPoint, endPoint);
+                break;
+            case DRAW_RECTANGLE_MODE:
+                mCommend = new CRectangleCommend(currentPaint, startPoint, endPoint);
+                break;
+            case DRAW_STRAIGHT_LINE:
+                mCommend = new CPathCommend(currentPaint, true, startPoint, endPoint);
+                break;
+            case SELECT_MODE:
+            case ROTATE_MODE:
+            case LOCKED_MODE:
+                break;
+        }
     }
 
 
