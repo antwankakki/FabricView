@@ -32,6 +32,7 @@ public class FabricView extends View {
     private ArrayList<CDrawable> mDrawableList = new ArrayList<>();
     private ArrayList<CDrawable> mUndoList = new ArrayList<>();
     private int mColor = Color.BLACK;
+    private int savePoint = 0;
 
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
@@ -200,6 +201,7 @@ public class FabricView extends View {
                 lastTouchY = eventY;
 
                 mDrawableList.add(currentPath);
+                mUndoList.clear();
                 return true;
             case MotionEvent.ACTION_MOVE:
             case MotionEvent.ACTION_UP:
@@ -346,6 +348,7 @@ public class FabricView extends View {
      */
     public void drawText(String text, int x, int y, Paint p) {
         mDrawableList.add(new CText(text, x, y, p));
+        mUndoList.clear();
         invalidate();
     }
 
@@ -396,12 +399,13 @@ public class FabricView extends View {
 
     /**
      * Clean the canvas, remove everything drawn on the canvas.
+     * Before calling this, ask the user to confirm because this cannot be undone.
      */
     public void cleanPage() {
         // remove everything from the list
-        while (!(mDrawableList.isEmpty())) {
-            mDrawableList.remove(0);
-        }
+        mDrawableList.clear();;
+        mUndoList.clear();
+        savePoint = 0;
         // request to redraw the canvas
         invalidate();
     }
@@ -420,6 +424,7 @@ public class FabricView extends View {
         bitmap.setWidth(width);
         bitmap.setHeight(height);
         mDrawableList.add(bitmap);
+        mUndoList.clear();
         invalidate();
     }
 
@@ -501,5 +506,11 @@ public class FabricView extends View {
         this.mInteractionMode = interactionMode;
     }
 
+    public void markSaved() {
+        savePoint = mDrawableList.size();
+    }
 
+    public boolean isSaved() {
+        return savePoint == mDrawableList.size();
+    }
 }
