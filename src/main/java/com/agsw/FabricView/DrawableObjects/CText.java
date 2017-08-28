@@ -2,24 +2,35 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 
 /**
  * Created by antwan on 10/3/2015.
  */
-public class CText implements CDrawable {
+public class CText extends CDrawable {
     private String mText;
-    private Paint mPaint;
-    private int x, y, mRotDegree;
 
+    /**
+     * Make sure that the paint has a set text size by calling paint.setTextSize().
+     */
     public CText(String s, int x, int y, Paint p) {
         setText(s);
         setYcoords(y);
         setXcoords(x);
         setPaint(p);
+        calculateTextSizes();
+    }
+
+    private void calculateTextSizes() {
+        Rect bounds = new Rect();
+        getPaint().getTextBounds(getText(), 0, getText().length(), bounds);
+        setHeight(bounds.height());
+        setWidth(bounds.width());
     }
 
     public void setText(String t) {
         mText = t;
+        calculateTextSizes();
     }
 
     public String getText() {
@@ -27,47 +38,30 @@ public class CText implements CDrawable {
     }
 
     @Override
-    public Paint getPaint() {
-        return mPaint;
-    }
-
-    @Override
-    public int getXcoords() {
-        return x;
-    }
-
-    @Override
-    public int getYcoords() {
-        return y;
-    }
-
-    @Override
-    public void setXcoords(int x) {
-        this.x = x;
-    }
-
-    @Override
-    public void setYcoords(int y) {
-        this.y = y;
-    }
-
-    @Override
     public void setPaint(Paint p) {
-        mPaint = p;
+        super.setPaint(p);
+        calculateTextSizes();
     }
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawText(getText(), (float) getXcoords(), (float) getYcoords(), mPaint);
+        canvas.drawText(getText(), (float) getXcoords(), (float) getYcoords(), getPaint());
     }
 
     @Override
-    public int getRotation() {
-        return mRotDegree;
+    public boolean equals(Object obj) {
+        if(!super.equals(obj)) {
+            return false;
+        }
+
+        if (!(obj instanceof CPath)) {
+            return false;
+        }
+        CText other = (CText) obj;
+        if(other.mText == null && this.mText == null) {
+            return true;
+        }
+        return other.mText.equals(this.mText);
     }
 
-    @Override
-    public void setRotation(int degree) {
-        mRotDegree = degree;
-    }
 }

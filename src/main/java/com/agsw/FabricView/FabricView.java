@@ -16,6 +16,7 @@ import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
+import com.agsw.FabricView.DrawableObjects.CTransform;
 
 import java.util.ArrayList;
 
@@ -49,7 +50,7 @@ public class FabricView extends View {
     private boolean mRedrawBackground;
 
     // background mode for the library, default to blank
-    private int mBackgroundMode = BACKGROUND_STYLE_BLANK;
+    private int mBackgroundMode = BACKGROUND_STYLE_GRAPH_PAPER;
 
     // Default Notebook left line color
     public static final int NOTEBOOK_LEFT_LINE_COLOR = Color.RED;
@@ -117,12 +118,25 @@ public class FabricView extends View {
         // go through each item in the list and draw it
         for (int i = 0; i < mDrawableList.size(); i++) {
             try {
-                mDrawableList.get(i).draw(canvas);
+                CDrawable d = mDrawableList.get(i);
+                if(d instanceof CTransform) {
+                    continue;
+                }
+                if(d.hasTransforms()) {
+                    Bitmap bitmap = Bitmap.createBitmap(d.getWidth(), d.getHeight(), Bitmap.Config.ARGB_8888);
+                    Canvas temp = new Canvas(bitmap);
+                    d.draw(temp);
+                    d.applyTransforms(temp);
+                    canvas.drawBitmap(bitmap, d.getXcoords(), d.getYcoords(), d.getPaint());
+                }
+                else {
+                    d.draw(canvas);
+                }
             }
 
             catch(Exception ex)
             {
-
+                ex.printStackTrace();
             }
         }
     }
@@ -171,6 +185,7 @@ public class FabricView extends View {
         return false;
     }
 
+    private static final float TOUCH_TOLERANCE = 4;
 
     /**
      * Handles the touch input if the mode is set to draw
@@ -182,6 +197,18 @@ public class FabricView extends View {
         // get location of touch
         float eventX = event.getX();
         float eventY = event.getY();
+        if(eventX < 0) {
+            eventX = 0;
+        }
+        if(eventY < 0) {
+            eventY = 0;
+        }
+        if(eventX > getWidth()) {
+            eventX = getWidth();
+        }
+        if(eventY > getHeight()) {
+            eventY = getHeight();
+        }
 
         // based on the users action, start drawing
         switch (event.getAction()) {
@@ -194,51 +221,56 @@ public class FabricView extends View {
                 currentPaint.setStyle(mStyle);
                 currentPaint.setStrokeJoin(Paint.Join.ROUND);
                 currentPaint.setStrokeWidth(mSize);
-                currentPath.moveTo(eventX, eventY);
                 currentPath.setPaint(currentPaint);
+                currentPath.moveTo(eventX, eventY);
                 // capture touched locations
                 lastTouchX = eventX;
                 lastTouchY = eventY;
-
                 mDrawableList.add(currentPath);
                 mUndoList.clear();
+
                 return true;
             case MotionEvent.ACTION_MOVE:
-            case MotionEvent.ACTION_UP:
-                currentPath.lineTo(eventX, eventY);
-                // When the hardware tracks events faster than they are delivered, the
-                // event will contain a history of those skipped points.
-                int historySize = event.getHistorySize();
-                for (int i = 0; i < historySize; i++) {
-                    float historicalX = event.getHistoricalX(i);
-                    float historicalY = event.getHistoricalY(i);
-                    if (historicalX < dirtyRect.left) {
-                        dirtyRect.left = historicalX;
-                    } else if (historicalX > dirtyRect.right) {
-                        dirtyRect.right = historicalX;
-                    }
-                    if (historicalY < dirtyRect.top) {
-                        dirtyRect.top = historicalY;
-                    } else if (historicalY > dirtyRect.bottom) {
-                        dirtyRect.bottom = historicalY;
-                    }
-                    currentPath.lineTo(historicalX, historicalY);
+                float dx = Math.abs(eventX - lastTouchX);
+                float dy = Math.abs(eventY - lastTouchY);
+
+                if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+
+                    currentPath.quadTo(lastTouchX, lastTouchY, (eventX + lastTouchX) / 2, (eventY + lastTouchY) / 2);
+                    lastTouchX = eventX;
+                    lastTouchY = eventY;
                 }
+//                int historySize = event.getHistorySize();
+//                for (int i = 0; i < historySize; i++) {
+//                    float historicalX = event.getHistoricalX(i);
+//                    float historicalY = event.getHistoricalY(i);
+//                    currentPath.lineTo(historicalX, historicalY);
+//                }
 
                 // After replaying history, connect the line to the touch point.
-                currentPath.lineTo(eventX, eventY);
+              //  currentPath.lineTo(eventX, eventY);
+
+                dirtyRect.left = Math.min(currentPath.getXcoords(), dirtyRect.left);
+                dirtyRect.right = Math.max(currentPath.getXcoords()+currentPath.getWidth(), dirtyRect.right);
+                dirtyRect.top = Math.min(currentPath.getYcoords(), dirtyRect.top);
+                dirtyRect.bottom = Math.max(currentPath.getYcoords()+currentPath.getHeight(), dirtyRect.bottom);
+
+                // After replaying history, connect the line to the touch point.
                 cleanDirtyRegion(eventX, eventY);
                 break;
+            case MotionEvent.ACTION_UP:
+                currentPath.lineTo(eventX, eventY);
+
             default:
                 return false;
         }
 
         // Include some padding to ensure nothing is clipped
-        invalidate(
-                (int) (dirtyRect.left - 20),
-                (int) (dirtyRect.top - 20),
-                (int) (dirtyRect.right + 20),
-                (int) (dirtyRect.bottom + 20));
+        invalidate();
+//                (int) (dirtyRect.left - 20),
+//                (int) (dirtyRect.top - 20),
+//                (int) (dirtyRect.right + 20),
+//                (int) (dirtyRect.bottom + 20));
 
         // register most recent touch locations
         lastTouchX = eventX;

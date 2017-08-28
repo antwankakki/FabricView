@@ -7,11 +7,8 @@ import android.graphics.Paint;
 /**
  * Created by antwan on 10/3/2015.
  */
-public class CBitmap implements CDrawable {
-    private int x, y, height, width;
+public class CBitmap extends CDrawable {
     private Bitmap mBitmap;
-    private Paint mPaint;
-    private int mRotDegree;
 
     public CBitmap(Bitmap src, int x, int y) {
         this(src, x, y, null);
@@ -19,62 +16,44 @@ public class CBitmap implements CDrawable {
 
     public CBitmap(Bitmap src, int x, int y, Paint p) {
         mBitmap = src;
+        setHeight(mBitmap.getHeight());
+        setWidth(mBitmap.getWidth());
+        setXcoords(x);
+        setYcoords(y);
+        setPaint(p);
+    }
+
+    public CBitmap(Bitmap src, int x, int y, int height, int width) {
+        this(src, x, y, height, width, null);
+    }
+
+    public CBitmap(Bitmap src, int x, int y, int height, int width, Paint p) {
+        mBitmap = Bitmap.createScaledBitmap(mBitmap, height, width, true);
+        setHeight(height);
+        setWidth(width);
         setXcoords(x);
         setYcoords(y);
         setPaint(p);
     }
 
     @Override
-    public Paint getPaint() {
-        return mPaint;
-    }
-
-    @Override
-    public void setPaint(Paint p) {
-        mPaint = p;
-    }
-
-    public void setHeight(int height) {
-        this.height = height;
-    }
-
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    @Override
-    public int getXcoords() {
-        return x;
-    }
-
-    @Override
-    public int getYcoords() {
-        return y;
-    }
-
-    @Override
-    public void setXcoords(int x) {
-        this.x = x;
-    }
-
-    @Override
-    public void setYcoords(int y) {
-        this.y = y;
-    }
-
-    @Override
     public void draw(Canvas canvas) {
-        Bitmap nsrc = Bitmap.createScaledBitmap(mBitmap, width, height, true);
-        canvas.drawBitmap(nsrc, x, y, mPaint);
+        canvas.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
     }
 
     @Override
-    public int getRotation() {
-        return mRotDegree;
-    }
+    public boolean equals(Object obj) {
+        if(!super.equals(obj)) {
+            return false;
+        }
 
-    @Override
-    public void setRotation(int degree) {
-        mRotDegree = degree;
+        if (!(obj instanceof CBitmap)) {
+            return false;
+        }
+        CBitmap other = (CBitmap) obj;
+        if(other.mBitmap == null && this.mBitmap == null) {
+            return true;
+        }
+        return other.mBitmap.sameAs(this.mBitmap);
     }
 }
