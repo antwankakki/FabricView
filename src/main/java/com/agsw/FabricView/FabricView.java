@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -19,6 +20,8 @@ import com.agsw.FabricView.DrawableObjects.CText;
 import com.agsw.FabricView.DrawableObjects.CTransform;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Created by antwan on 10/3/2015.
@@ -32,6 +35,7 @@ public class FabricView extends View {
     // painting objects and properties
     private ArrayList<CDrawable> mDrawableList = new ArrayList<>();
     private ArrayList<CDrawable> mUndoList = new ArrayList<>();
+    private CDrawable selected = null;
     private int mColor = Color.BLACK;
     private int savePoint = 0;
 
@@ -50,7 +54,7 @@ public class FabricView extends View {
     private boolean mRedrawBackground;
 
     // background mode for the library, default to blank
-    private int mBackgroundMode = BACKGROUND_STYLE_GRAPH_PAPER;
+    private int mBackgroundMode = BACKGROUND_STYLE_BLANK;
 
     // Default Notebook left line color
     public static final int NOTEBOOK_LEFT_LINE_COLOR = Color.RED;
@@ -65,6 +69,7 @@ public class FabricView extends View {
     // keep track of path and paint being in use
     CPath currentPath;
     Paint currentPaint;
+    Paint selectionPaint;
 
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
@@ -84,6 +89,7 @@ public class FabricView extends View {
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
     public static final int NOTEBOOK_LEFT_LINE_PADDING = 120;
+    private static final float SELECTION_LINE_WIDTH = 2;
 
     /*********************************************************************************************/
     /************************************     TO-DOs    ******************************************/
@@ -105,6 +111,14 @@ public class FabricView extends View {
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
 
+        selectionPaint = new Paint();
+        selectionPaint.setAntiAlias(true);
+        selectionPaint.setColor(Color.GREEN);
+        selectionPaint.setStyle(Paint.Style.STROKE);
+        selectionPaint.setStrokeJoin(Paint.Join.ROUND);
+        selectionPaint.setStrokeWidth(SELECTION_LINE_WIDTH);
+        selectionPaint.setPathEffect(new DashPathEffect(new float[] {10,20}, 0));
+
     }
 
     /**
@@ -122,6 +136,7 @@ public class FabricView extends View {
                 if(d instanceof CTransform) {
                     continue;
                 }
+                RectF rect = d.getBounds();
                 if(d.hasTransforms()) {
                     Bitmap bitmap = Bitmap.createBitmap(d.getWidth(), d.getHeight(), Bitmap.Config.ARGB_8888);
                     Canvas temp = new Canvas(bitmap);
@@ -132,6 +147,10 @@ public class FabricView extends View {
                 else {
                     d.draw(canvas);
                 }
+                if(mInteractionMode == SELECT_MODE && d.equals(selected)) {
+                    growRect(rect, SELECTION_LINE_WIDTH);
+                    canvas.drawRect(rect, selectionPaint);
+                }
             }
 
             catch(Exception ex)
@@ -139,6 +158,13 @@ public class FabricView extends View {
                 ex.printStackTrace();
             }
         }
+    }
+
+    private void growRect(RectF rect, float amount) {
+        rect.left -= amount;
+        rect.top -= amount;
+        rect.bottom += amount;
+        rect.right += amount;
     }
 
 
@@ -283,7 +309,20 @@ public class FabricView extends View {
      * @param event the touch event
      */
     private boolean onTouchSelectMode(MotionEvent event) {
-        // TODO Implement Method
+        ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
+        selected = null;
+        while(li.hasPrevious()) {
+            CDrawable d = li.previous();
+            if (d instanceof CTransform) {
+                continue;
+            }
+            RectF rect = d.getBounds();
+            if( rect.contains(event.getX(), event.getY()) ) {
+                selected = d;
+                break;
+            }
+        }
+        invalidate();
         return false;
     }
 
@@ -421,9 +460,10 @@ public class FabricView extends View {
 
     public void redo() {
         if (mUndoList.size() > 0) {
-
-            mDrawableList.add(mUndoList.get(mUndoList.size()-1));
-            mUndoList.remove(mUndoList.size()-1);
+            CDrawable toRedo = mUndoList.get(mUndoList.size()-1);
+            mDrawableList.add(toRedo);
+            mDrawableList.addAll(toRedo.getTransforms());
+            mUndoList.remove(toRedo);
 
             invalidate();
         }
@@ -536,6 +576,11 @@ public class FabricView extends View {
             interactionMode = LOCKED_MODE;
 
         this.mInteractionMode = interactionMode;
+        invalidate();
+    }
+
+    public List<CDrawable> getDrawablesList() {
+        return mDrawableList;
     }
 
     public void markSaved() {
@@ -545,4 +590,47 @@ public class FabricView extends View {
     public boolean isSaved() {
         return savePoint == mDrawableList.size();
     }
+
+    public List<CDrawable> getUnsavedDrawablesList() {
+        return mDrawableList.subList(savePoint, mDrawableList.size());
+    }
+
+    public void selectLastDrawn() {
+        if(mDrawableList.isEmpty()) {
+            return;
+        }
+
+        ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
+        while(li.hasPrevious()) {
+            CDrawable d = li.previous();
+            if (d instanceof CTransform) {
+                continue;
+            }
+            selected = d;
+            break;
+        }
+        invalidate();
+    }
+
+    public CDrawable getSelection() {
+        return selected;
+    }
+    public void deSelect() {
+        selected = null;
+        invalidate();
+    }
+
+    public void deleteSelection() {
+        if(selected == null) {
+            return;
+        }
+        ArrayList<CDrawable> toDelete = new ArrayList<>();
+        toDelete.add(selected);
+        toDelete.addAll(selected.getTransforms());
+        mDrawableList.removeAll(toDelete);
+
+        mUndoList.add(selected);
+        invalidate();
+    }
+
 }

@@ -3,8 +3,10 @@ package com.agsw.FabricView.DrawableObjects;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -132,5 +134,14 @@ public abstract class CDrawable {
                 other.getHeight() == this.getHeight() &&
                 other.getWidth() == this.getWidth() &&
                 other.getPaint() == this.getPaint();
+    }
+
+    public List<CTransform> getTransforms() {
+        return mTransforms;
+    }
+
+    public RectF getBounds() {
+        return new RectF((float)Math.floor(getXcoords()), (float)Math.floor(getYcoords()),
+                (float)Math.ceil(getXcoords()+getWidth()), (float)Math.ceil(getYcoords()+getHeight()));
     }
 }
