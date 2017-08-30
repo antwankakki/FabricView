@@ -36,6 +36,10 @@ public class CBitmap extends CDrawable {
         setPaint(p);
     }
 
+    public Bitmap getBitmap() {
+        return mBitmap;
+    }
+
     @Override
     public void draw(Canvas canvas) {
         canvas.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
@@ -43,6 +47,9 @@ public class CBitmap extends CDrawable {
 
     @Override
     public boolean equals(Object obj) {
+        if(this == obj) {
+            return true;
+        }
         if(!super.equals(obj)) {
             return false;
         }

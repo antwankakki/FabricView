@@ -38,6 +38,9 @@ public class FabricView extends View {
     private CDrawable selected = null;
     private int mColor = Color.BLACK;
     private int savePoint = 0;
+    private Bitmap deleteIcon;
+    private RectF deleteIconPosition = new RectF(-1, -1, -1, -1);
+    private DeletionListener deletionListener = null;
 
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
@@ -70,6 +73,8 @@ public class FabricView extends View {
     CPath currentPath;
     Paint currentPaint;
     Paint selectionPaint;
+
+    private int selectionColor = Color.DKGRAY;
 
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
@@ -113,12 +118,14 @@ public class FabricView extends View {
 
         selectionPaint = new Paint();
         selectionPaint.setAntiAlias(true);
-        selectionPaint.setColor(Color.GREEN);
+        selectionPaint.setColor(selectionColor);
         selectionPaint.setStyle(Paint.Style.STROKE);
         selectionPaint.setStrokeJoin(Paint.Join.ROUND);
         selectionPaint.setStrokeWidth(SELECTION_LINE_WIDTH);
         selectionPaint.setPathEffect(new DashPathEffect(new float[] {10,20}, 0));
 
+        deleteIcon = BitmapFactory.decodeResource(context.getResources(),
+                android.R.drawable.ic_menu_delete);
     }
 
     /**
@@ -150,6 +157,12 @@ public class FabricView extends View {
                 if(mInteractionMode == SELECT_MODE && d.equals(selected)) {
                     growRect(rect, SELECTION_LINE_WIDTH);
                     canvas.drawRect(rect, selectionPaint);
+                    deleteIconPosition = new RectF();
+                    deleteIconPosition.left = selected.getXcoords() + selected.getWidth() - (deleteIcon.getWidth()/2);
+                    deleteIconPosition.top = selected.getYcoords() - (deleteIcon.getHeight()/2);
+                    deleteIconPosition.right = deleteIconPosition.left + deleteIcon.getWidth();
+                    deleteIconPosition.bottom = deleteIconPosition.top + deleteIcon.getHeight();
+                    canvas.drawBitmap(deleteIcon, deleteIconPosition.left, deleteIconPosition.top, d.getPaint());
                 }
             }
 
@@ -310,6 +323,10 @@ public class FabricView extends View {
      */
     private boolean onTouchSelectMode(MotionEvent event) {
         ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
+        if(deleteIconPosition.contains(event.getX(), event.getY())) {
+            deleteSelection();
+            return false;
+        }
         selected = null;
         while(li.hasPrevious()) {
             CDrawable d = li.previous();
@@ -475,7 +492,8 @@ public class FabricView extends View {
      */
     public void cleanPage() {
         // remove everything from the list
-        mDrawableList.clear();;
+        mDrawableList.clear();
+        currentPath = null;
         mUndoList.clear();
         savePoint = 0;
         // request to redraw the canvas
@@ -592,7 +610,19 @@ public class FabricView extends View {
     }
 
     public List<CDrawable> getUnsavedDrawablesList() {
+        if(savePoint > mDrawableList.size()) {
+            //Some things were deleted.
+            return new ArrayList<>();
+        }
         return mDrawableList.subList(savePoint, mDrawableList.size());
+    }
+
+    public void revertUnsaved() {
+        List<CDrawable> unsaved = getUnsavedDrawablesList();
+        for (CDrawable d :
+                unsaved) {
+            deleteDrawable(d);
+        }
     }
 
     public void selectLastDrawn() {
@@ -624,13 +654,42 @@ public class FabricView extends View {
         if(selected == null) {
             return;
         }
-        ArrayList<CDrawable> toDelete = new ArrayList<>();
-        toDelete.add(selected);
-        toDelete.addAll(selected.getTransforms());
-        mDrawableList.removeAll(toDelete);
+        deleteDrawable(selected);
+        selected = null;
+    }
 
-        mUndoList.add(selected);
+    public void deleteDrawable(CDrawable d) {
+        if(d == null) {
+            return;
+        }
+        ArrayList<CDrawable> toDelete = new ArrayList<>();
+        toDelete.add(d);
+        toDelete.addAll(d.getTransforms());
+        mDrawableList.removeAll(toDelete);
+        if(deletionListener != null) {
+            deletionListener.deleted(d);
+        }
+        mUndoList.add(d);
         invalidate();
     }
 
+    public void setDeleteIcon(Bitmap newIcon) {
+        deleteIcon = newIcon;
+    }
+
+    public void setDeletionListener(DeletionListener newListener) {
+        deletionListener = newListener;
+    }
+
+    public interface DeletionListener {
+        void deleted(CDrawable drawable);
+    }
+
+    public int getSelectionColor() {
+        return selectionColor;
+    }
+
+    public void setSelectionColor(int selectionColor) {
+        this.selectionColor = selectionColor;
+    }
 }

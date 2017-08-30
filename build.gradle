@@ -23,9 +23,14 @@ android {
         versionName "0.1"
     }
     buildTypes {
+        debug {
+            minifyEnabled false
+            useProguard false
+        }
+
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            useProguard false
         }
     }
 }
