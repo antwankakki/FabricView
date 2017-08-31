@@ -2,7 +2,10 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 
 /**
  * Created by antwan on 10/3/2015.
@@ -42,7 +45,20 @@ public class CBitmap extends CDrawable {
 
     @Override
     public void draw(Canvas canvas) {
+        Matrix matrix = new Matrix();
+        for (CTransform t:
+                getTransforms()) {
+            t.applyTransform(matrix);
+        }
+        Bitmap canvasBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas temp = new Canvas(canvasBitmap);
+        canvas.save();
+        canvas.concat(matrix);
         canvas.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
+        canvas.restore();
+//        Bitmap transformedBitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
+
+        canvas.drawBitmap(canvasBitmap, 0, 0, getPaint());
     }
 
     @Override

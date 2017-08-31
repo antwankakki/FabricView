@@ -2,6 +2,8 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 
 import java.util.Vector;
 
@@ -10,18 +12,17 @@ import java.util.Vector;
  */
 
 public class CTranslation extends CTransform {
-    private final CDrawable mDrawable;
     private Vector<Integer> mDirection = new Vector<Integer>(2);
 
     /**
      * You must call setDirection after calling this constructor.
      */
     public CTranslation(CDrawable drawable) {
-        mDrawable = drawable;
+        setDrawable(drawable);
     }
 
     public CTranslation(CDrawable drawable, Vector<Integer> direction) {
-        mDrawable = drawable;
+        setDrawable(drawable);
         mDirection = direction;
     }
 
@@ -39,13 +40,18 @@ public class CTranslation extends CTransform {
         throw new UnsupportedOperationException("Don't call draw() directly on this class.");
     }
 
+//    @Override
+//    public Canvas applyTransform(Canvas canvas) {
+//        Bitmap bitmap = Bitmap.createBitmap(getDrawable().getWidth(), getDrawable().getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas temp = new Canvas(bitmap);
+//        getDrawable().draw(temp);
+//        temp.translate(mDirection.get(0), mDirection.get(1));
+//        return temp;
+//    }
+
     @Override
-    public Canvas applyTransform(Canvas canvas) {
-        Bitmap bitmap = Bitmap.createBitmap(mDrawable.getWidth(), mDrawable.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas temp = new Canvas(bitmap);
-        mDrawable.draw(temp);
-        temp.translate(mDirection.get(0), mDirection.get(1));
-        return temp;
+    public void applyTransform(Matrix m) {
+        m.setTranslate(mDirection.get(0), mDirection.get(1));
     }
 
     @Override
@@ -55,10 +61,10 @@ public class CTranslation extends CTransform {
             return false;
         }
         CTranslation other = (CTranslation) obj;
-        if(other.mDrawable == null && this.mDrawable == null) {
+        if(other.getDrawable() == null && this.getDrawable() == null) {
             return true;
         }
-        if(!mDrawable.equals(other.mDrawable)) {
+        if(!getDrawable().equals(other.getDrawable())) {
             return false;
         }
         return other.mDirection == this.mDirection;

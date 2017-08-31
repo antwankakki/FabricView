@@ -1,6 +1,7 @@
 package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -17,7 +18,14 @@ public class CPath extends CDrawable {
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawPath(mPath, getPaint());
+        Matrix matrix = new Matrix();
+        for (CTransform t:
+             getTransforms()) {
+            t.applyTransform(matrix);
+        }
+        Path copy = new Path(mPath);
+        copy.transform(matrix);
+        canvas.drawPath(copy, getPaint());
     }
 
     public void lineTo(float eventX, float eventY) {

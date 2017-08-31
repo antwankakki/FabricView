@@ -2,24 +2,25 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 
 /**
  * Created by emmanuel.proulx on 2017-08-27.
  */
 
 public class CScale extends CTransform {
-    private final CDrawable mDrawable;
     private float mFactor = 0.0f;
 
     /**
      * You must call setDirection after calling this constructor.
      */
     public CScale(CDrawable drawable) {
-        mDrawable = drawable;
+        setDrawable(drawable);
     }
 
     public CScale(CDrawable drawable, float direction) {
-        mDrawable = drawable;
+        setDrawable(drawable);
         mFactor = direction;
     }
 
@@ -37,13 +38,18 @@ public class CScale extends CTransform {
         throw new UnsupportedOperationException("Don't call draw() directly on this class.");
     }
 
+//    @Override
+//    public Canvas applyTransform(Canvas canvas) {
+//        Bitmap bitmap = Bitmap.createBitmap(getDrawable().getWidth(), getDrawable().getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas temp = new Canvas(bitmap);
+//        getDrawable().draw(temp);
+//        temp.scale(mFactor, mFactor);
+//        return temp;
+//    }
+
     @Override
-    public Canvas applyTransform(Canvas canvas) {
-        Bitmap bitmap = Bitmap.createBitmap(mDrawable.getWidth(), mDrawable.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas temp = new Canvas(bitmap);
-        mDrawable.draw(temp);
-        temp.scale(mFactor, mFactor);
-        return temp;
+    public void applyTransform(Matrix m) {
+        m.setScale(mFactor, mFactor);
     }
 
     @Override
@@ -53,10 +59,10 @@ public class CScale extends CTransform {
             return false;
         }
         CScale other = (CScale) obj;
-        if(other.mDrawable == null && this.mDrawable == null) {
+        if(other.getDrawable() == null && this.getDrawable() == null) {
             return true;
         }
-        if(!mDrawable.equals(other.mDrawable)) {
+        if(!getDrawable().equals(other.getDrawable())) {
             return false;
         }
         return other.mFactor == this.mFactor;

@@ -2,7 +2,9 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
@@ -92,14 +94,28 @@ public abstract class CDrawable {
 
     public abstract void draw(Canvas canvas);
 
-    public void applyTransforms(Canvas base) {
-        Bitmap bitmap = Bitmap.createBitmap(base.getWidth(), base.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas temp = new Canvas(bitmap);
+//    public void applyTransforms(Canvas base) {
+//        Bitmap bitmap = Bitmap.createBitmap(base.getWidth(), base.getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas temp = new Canvas(bitmap);
+//        for (CTransform t :
+//                mTransforms) {
+//            temp = t.applyTransform(temp);
+//        }
+//        base.drawBitmap(bitmap, getXcoords(), getYcoords(), getPaint());
+//    }
+
+    public Rect computeBounds() {
+        RectF bounds = new RectF(x, y, x+width, y+height);
+        Matrix m = new Matrix();
         for (CTransform t :
                 mTransforms) {
-            temp = t.applyTransform(temp);
+            t.applyTransform(m);
         }
-        base.drawBitmap(bitmap, getXcoords(), getYcoords(), getPaint());
+        m.mapRect(bounds);
+        Rect result = new Rect();
+        bounds.round(result);
+        return result;
+
     }
 
     public boolean hasTransforms() {
@@ -138,10 +154,5 @@ public abstract class CDrawable {
 
     public List<CTransform> getTransforms() {
         return mTransforms;
-    }
-
-    public RectF getBounds() {
-        return new RectF((float)Math.floor(getXcoords()), (float)Math.floor(getYcoords()),
-                (float)Math.ceil(getXcoords()+getWidth()), (float)Math.ceil(getYcoords()+getHeight()));
     }
 }

@@ -2,24 +2,25 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 
 /**
  * Created by emmanuel.proulx on 2017-08-27.
  */
 
 public class CRotation extends CTransform {
-    private final CDrawable mDrawable;
     private int mRotDegree;
 
     /**
      * You must call setRotation after calling this contructor.
      */
     public CRotation(CDrawable drawable) {
-        mDrawable = drawable;
+        setDrawable(drawable);
     }
 
     public CRotation(CDrawable drawable, int rotation) {
-        mDrawable = drawable;
+        setDrawable(drawable);
         mRotDegree = rotation;
     }
 
@@ -36,13 +37,18 @@ public class CRotation extends CTransform {
         throw new UnsupportedOperationException("Don't call draw() directly on this class.");
     }
 
+//    @Override
+//    public Canvas applyTransform(Canvas canvas) {
+//        Bitmap bitmap = Bitmap.createBitmap(getDrawable().getWidth(), getDrawable().getHeight(), Bitmap.Config.ARGB_8888);
+//        Canvas temp = new Canvas(bitmap);
+//        getDrawable().draw(temp);
+//        temp.rotate(-getRotation());
+//        return temp;
+//    }
+
     @Override
-    public Canvas applyTransform(Canvas canvas) {
-        Bitmap bitmap = Bitmap.createBitmap(mDrawable.getWidth(), mDrawable.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas temp = new Canvas(bitmap);
-        mDrawable.draw(temp);
-        temp.rotate(-getRotation());
-        return temp;
+    public void applyTransform(Matrix m) {
+        m.setRotate(mRotDegree);
     }
 
     @Override
@@ -52,10 +58,10 @@ public class CRotation extends CTransform {
             return false;
         }
         CRotation other = (CRotation) obj;
-        if(other.mDrawable == null && this.mDrawable == null) {
+        if(other.getDrawable() == null && this.getDrawable() == null) {
             return true;
         }
-        if(!mDrawable.equals(other.mDrawable)) {
+        if(!getDrawable().equals(other.getDrawable())) {
             return false;
         }
         return other.mRotDegree == this.mRotDegree;
