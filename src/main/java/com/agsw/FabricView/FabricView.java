@@ -97,8 +97,8 @@ public class FabricView extends View {
 
     // Interactive Modes
     public static final int DRAW_MODE = 0;
-    public static final int SELECT_MODE = 1; // TODO Support Object Selection.
-    public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
+    public static final int SELECT_MODE = 1;
+    public static final int ROTATE_MODE = 2; // TODO Support Object Rotation.
     public static final int LOCKED_MODE = 3;
 
     /*********************************************************************************************/
@@ -113,6 +113,7 @@ public class FabricView extends View {
     private float mZoomLevel = 1.0f; //TODO Support Zoom
     private float mHorizontalOffset = 1, mVerticalOffset = 1; // TODO Support Offset and Viewport
     public int mAutoscrollDistance = 100; // TODO Support Autoscroll
+    private Rect cropBounds = null;
 
     /**
      * Default Constructor, sets sane values.
@@ -146,6 +147,7 @@ public class FabricView extends View {
     protected void onDraw(Canvas canvas) {
         // check if background needs to be redrawn
         drawBackground(canvas, mBackgroundMode);
+        Rect totalBounds = new Rect(canvas.getWidth(), canvas.getHeight(), 0, 0);
 
         // go through each item in the list and draw it
         for (int i = 0; i < mDrawableList.size(); i++) {
@@ -156,6 +158,7 @@ public class FabricView extends View {
                 }
 
                 Rect bounds = d.computeBounds();
+                totalBounds.union(bounds);
                 d.draw(canvas);
                 if (mInteractionMode == SELECT_MODE && d.equals(selected)) {
                     growRect(bounds, SELECTION_LINE_WIDTH);
@@ -170,6 +173,13 @@ public class FabricView extends View {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        }
+        if(totalBounds.width() <= 0) {
+            //No bounds
+            cropBounds = null;
+        }
+        else {
+            cropBounds = totalBounds;
         }
     }
 
@@ -581,6 +591,16 @@ public class FabricView extends View {
         return mCanvasBitmap;
     }
 
+    public Bitmap getCroppedCanvasBitmap() {
+        if(cropBounds == null) {
+            //No pixels at all
+            return null;
+        }
+        Bitmap mCanvasBitmap = getCanvasBitmap();
+        Bitmap cropped = Bitmap.createBitmap(mCanvasBitmap, cropBounds.left, cropBounds.top, cropBounds.width(), cropBounds.height());
+        return cropped;
+    }
+
     public int getColor() {
         return mColor;
     }
@@ -735,4 +755,5 @@ public class FabricView extends View {
     public void setSelectionColor(int selectionColor) {
         this.selectionColor = selectionColor;
     }
+
 }
