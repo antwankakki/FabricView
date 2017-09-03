@@ -5,8 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.DashPathEffect;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,8 +19,13 @@ import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
+import com.agsw.FabricView.DrawableObjects.CTransform;
+import com.agsw.FabricView.DrawableObjects.CTranslation;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Vector;
 
 /**
  * Created by antwan on 10/3/2015.
@@ -31,7 +39,17 @@ public class FabricView extends View {
     // painting objects and properties
     private ArrayList<CDrawable> mDrawableList = new ArrayList<>();
     private ArrayList<CDrawable> mUndoList = new ArrayList<>();
+    private CDrawable selected = null;
+    private long pressStartTime;
+    private float pressedX;
+    private float pressedY;
+    private CDrawable hovering = null;
+
     private int mColor = Color.BLACK;
+    private int savePoint = 0;
+    private Bitmap deleteIcon;
+    private RectF deleteIconPosition = new RectF(-1, -1, -1, -1);
+    private DeletionListener deletionListener = null;
 
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
@@ -59,10 +77,15 @@ public class FabricView extends View {
     // Vars to decrease dirty area and increase performance
     private float lastTouchX, lastTouchY;
     private final RectF dirtyRect = new RectF();
-    
+
     // keep track of path and paint being in use
     CPath currentPath;
     Paint currentPaint;
+    Paint selectionPaint;
+
+    private int selectionColor = Color.DKGRAY;
+    private static final int MAX_CLICK_DURATION = 1000;
+    private static final int MAX_CLICK_DISTANCE = 15;
 
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
@@ -74,14 +97,15 @@ public class FabricView extends View {
 
     // Interactive Modes
     public static final int DRAW_MODE = 0;
-    public static final int SELECT_MODE = 1; // TODO Support Object Selection.
-    public static final int ROTATE_MODE = 2; // TODO Support Object ROtation.
+    public static final int SELECT_MODE = 1;
+    public static final int ROTATE_MODE = 2; // TODO Support Object Rotation.
     public static final int LOCKED_MODE = 3;
 
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
     public static final int NOTEBOOK_LEFT_LINE_PADDING = 120;
+    private static final int SELECTION_LINE_WIDTH = 2;
 
     /*********************************************************************************************/
     /************************************     TO-DOs    ******************************************/
@@ -89,6 +113,7 @@ public class FabricView extends View {
     private float mZoomLevel = 1.0f; //TODO Support Zoom
     private float mHorizontalOffset = 1, mVerticalOffset = 1; // TODO Support Offset and Viewport
     public int mAutoscrollDistance = 100; // TODO Support Autoscroll
+    private Rect cropBounds = null;
 
     /**
      * Default Constructor, sets sane values.
@@ -103,6 +128,16 @@ public class FabricView extends View {
         this.setBackgroundColor(mBackgroundColor);
         mTextExpectTouch = false;
 
+        selectionPaint = new Paint();
+        selectionPaint.setAntiAlias(true);
+        selectionPaint.setColor(selectionColor);
+        selectionPaint.setStyle(Paint.Style.STROKE);
+        selectionPaint.setStrokeJoin(Paint.Join.ROUND);
+        selectionPaint.setStrokeWidth(SELECTION_LINE_WIDTH);
+        selectionPaint.setPathEffect(new DashPathEffect(new float[]{10, 20}, 0));
+
+        deleteIcon = BitmapFactory.decodeResource(context.getResources(),
+                android.R.drawable.ic_menu_delete);
     }
 
     /**
@@ -112,18 +147,47 @@ public class FabricView extends View {
     protected void onDraw(Canvas canvas) {
         // check if background needs to be redrawn
         drawBackground(canvas, mBackgroundMode);
+        Rect totalBounds = new Rect(canvas.getWidth(), canvas.getHeight(), 0, 0);
 
         // go through each item in the list and draw it
         for (int i = 0; i < mDrawableList.size(); i++) {
             try {
-                mDrawableList.get(i).draw(canvas);
-            }
+                CDrawable d = mDrawableList.get(i);
+                if (d instanceof CTransform) {
+                    continue;
+                }
 
-            catch(Exception ex)
-            {
-
+                Rect bounds = d.computeBounds();
+                totalBounds.union(bounds);
+                d.draw(canvas);
+                if (mInteractionMode == SELECT_MODE && d.equals(selected)) {
+                    growRect(bounds, SELECTION_LINE_WIDTH);
+                    canvas.drawRect(new RectF(bounds), selectionPaint);
+                    deleteIconPosition = new RectF();
+                    deleteIconPosition.left = bounds.right - (deleteIcon.getWidth() / 2);
+                    deleteIconPosition.top = bounds.top - (deleteIcon.getHeight() / 2);
+                    deleteIconPosition.right = deleteIconPosition.left + deleteIcon.getWidth();
+                    deleteIconPosition.bottom = deleteIconPosition.top + deleteIcon.getHeight();
+                    canvas.drawBitmap(deleteIcon, deleteIconPosition.left, deleteIconPosition.top, d.getPaint());
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
+        if(totalBounds.width() <= 0) {
+            //No bounds
+            cropBounds = null;
+        }
+        else {
+            cropBounds = totalBounds;
+        }
+    }
+
+    private void growRect(Rect rect, int amount) {
+        rect.left -= amount;
+        rect.top -= amount;
+        rect.bottom += amount;
+        rect.right += amount;
     }
 
 
@@ -142,17 +206,17 @@ public class FabricView extends View {
         // delegate action to the correct method
         if (getInteractionMode() == DRAW_MODE)
             return onTouchDrawMode(event);
-        else if (getInteractionMode() == SELECT_MODE)
+        if (getInteractionMode() == SELECT_MODE)
             return onTouchSelectMode(event);
-        else if (getInteractionMode() == ROTATE_MODE)
+        if (getInteractionMode() == ROTATE_MODE)
             return onTouchRotateMode(event);
         // if none of the above are selected, delegate to locked mode
-        else
-            return onTouchLockedMode(event);
+        return onTouchLockedMode(event);
     }
 
     /**
      * Handles touch event if the mode is set to locked
+     *
      * @param event the event to handle
      * @return false, shouldn't do anything with it for now
      */
@@ -163,6 +227,7 @@ public class FabricView extends View {
 
     /**
      * Handles the touch input if the mode is set to rotate
+     *
      * @param event the touch event
      * @return the result of the action
      */
@@ -170,17 +235,30 @@ public class FabricView extends View {
         return false;
     }
 
+    private static final float TOUCH_TOLERANCE = 4;
 
     /**
      * Handles the touch input if the mode is set to draw
+     *
      * @param event the touch event
      * @return the result of the action
      */
-    public boolean onTouchDrawMode(MotionEvent event)
-    {
+    public boolean onTouchDrawMode(MotionEvent event) {
         // get location of touch
         float eventX = event.getX();
         float eventY = event.getY();
+        if (eventX < 0) {
+            eventX = 0;
+        }
+        if (eventY < 0) {
+            eventY = 0;
+        }
+        if (eventX > getWidth()) {
+            eventX = getWidth();
+        }
+        if (eventY > getHeight()) {
+            eventY = getHeight();
+        }
 
         // based on the users action, start drawing
         switch (event.getAction()) {
@@ -193,50 +271,56 @@ public class FabricView extends View {
                 currentPaint.setStyle(mStyle);
                 currentPaint.setStrokeJoin(Paint.Join.ROUND);
                 currentPaint.setStrokeWidth(mSize);
-                currentPath.moveTo(eventX, eventY);
                 currentPath.setPaint(currentPaint);
+                currentPath.moveTo(eventX, eventY);
                 // capture touched locations
                 lastTouchX = eventX;
                 lastTouchY = eventY;
-
                 mDrawableList.add(currentPath);
+                mUndoList.clear();
+
                 return true;
             case MotionEvent.ACTION_MOVE:
-            case MotionEvent.ACTION_UP:
-                currentPath.lineTo(eventX, eventY);
-                // When the hardware tracks events faster than they are delivered, the
-                // event will contain a history of those skipped points.
-                int historySize = event.getHistorySize();
-                for (int i = 0; i < historySize; i++) {
-                    float historicalX = event.getHistoricalX(i);
-                    float historicalY = event.getHistoricalY(i);
-                    if (historicalX < dirtyRect.left) {
-                        dirtyRect.left = historicalX;
-                    } else if (historicalX > dirtyRect.right) {
-                        dirtyRect.right = historicalX;
-                    }
-                    if (historicalY < dirtyRect.top) {
-                        dirtyRect.top = historicalY;
-                    } else if (historicalY > dirtyRect.bottom) {
-                        dirtyRect.bottom = historicalY;
-                    }
-                    currentPath.lineTo(historicalX, historicalY);
+                float dx = Math.abs(eventX - lastTouchX);
+                float dy = Math.abs(eventY - lastTouchY);
+
+                if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+
+                    currentPath.quadTo(lastTouchX, lastTouchY, (eventX + lastTouchX) / 2, (eventY + lastTouchY) / 2);
+                    lastTouchX = eventX;
+                    lastTouchY = eventY;
                 }
+//                int historySize = event.getHistorySize();
+//                for (int i = 0; i < historySize; i++) {
+//                    float historicalX = event.getHistoricalX(i);
+//                    float historicalY = event.getHistoricalY(i);
+//                    currentPath.lineTo(historicalX, historicalY);
+//                }
 
                 // After replaying history, connect the line to the touch point.
-                currentPath.lineTo(eventX, eventY);
+                //  currentPath.lineTo(eventX, eventY);
+
+                dirtyRect.left = Math.min(currentPath.getXcoords(), dirtyRect.left);
+                dirtyRect.right = Math.max(currentPath.getXcoords() + currentPath.getWidth(), dirtyRect.right);
+                dirtyRect.top = Math.min(currentPath.getYcoords(), dirtyRect.top);
+                dirtyRect.bottom = Math.max(currentPath.getYcoords() + currentPath.getHeight(), dirtyRect.bottom);
+
+                // After replaying history, connect the line to the touch point.
                 cleanDirtyRegion(eventX, eventY);
                 break;
+            case MotionEvent.ACTION_UP:
+                currentPath.lineTo(eventX, eventY);
+
             default:
                 return false;
         }
 
         // Include some padding to ensure nothing is clipped
-        invalidate(
-                (int) (dirtyRect.left - 20),
-                (int) (dirtyRect.top - 20),
-                (int) (dirtyRect.right + 20),
-                (int) (dirtyRect.bottom + 20));
+        invalidate();
+//                (int) (dirtyRect.left - 20),
+//                (int) (dirtyRect.top - 20),
+//                (int) (dirtyRect.right + 20),
+//                (int) (dirtyRect.bottom + 20));
 
         // register most recent touch locations
         lastTouchX = eventX;
@@ -246,10 +330,56 @@ public class FabricView extends View {
 
     /**
      * Handles the touch input if the mode is set to select
+     *
      * @param event the touch event
      */
     private boolean onTouchSelectMode(MotionEvent event) {
-        // TODO Implement Method
+        ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                pressStartTime = SystemClock.uptimeMillis();
+                pressedX = event.getX();
+                pressedY = event.getY();
+
+                while (li.hasPrevious()) {
+                    CDrawable d = li.previous();
+                    if (d instanceof CTransform) {
+                        continue;
+                    }
+                    Rect rect = d.computeBounds();
+                    if (rect.contains((int)pressedX, (int)pressedY)) {
+                        hovering = d;
+                        break;
+                    }
+                }
+                return true;
+            case MotionEvent.ACTION_UP:
+                long pressDuration = SystemClock.uptimeMillis() - pressStartTime;
+                double distance = Math.sqrt(Math.pow((event.getX() - pressedX), 2) + Math.pow((event.getY() - pressedY), 2));
+                if (pressDuration < MAX_CLICK_DURATION && distance < MAX_CLICK_DISTANCE) {
+                    //It was a click not a drag.
+                    if (hovering == null && deleteIconPosition.contains(event.getX(), event.getY())) {
+                        deleteSelection();
+                        return true;
+                    }
+                    selected = hovering;
+                } else if (distance > MAX_CLICK_DISTANCE) {
+                    //It was a drag. Move the object there.
+                    if (hovering != null) {
+                        CTranslation trans = new CTranslation(hovering);
+                        Vector<Integer> v = new Vector<>(2);
+                        v.add((int) (event.getX() - pressedX));
+                        v.add((int) (event.getY() - pressedY));
+                        trans.setDirection(v);
+                        hovering.addTransform(trans);
+                        mDrawableList.add(trans);
+                        mUndoList.clear();
+                    }
+                }
+                invalidate();
+                hovering = null;
+                return true;
+        }
         return false;
     }
 
@@ -259,12 +389,13 @@ public class FabricView extends View {
      ******************************************/
     /**
      * Draw the background on the canvas
-     * @param canvas the canvas to draw on
+     *
+     * @param canvas         the canvas to draw on
      * @param backgroundMode one of BACKGROUND_STYLE_GRAPH_PAPER, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_BLANK
      */
     public void drawBackground(Canvas canvas, int backgroundMode) {
         canvas.drawColor(mBackgroundColor);
-        if(backgroundMode != BACKGROUND_STYLE_BLANK) {
+        if (backgroundMode != BACKGROUND_STYLE_BLANK) {
             Paint linePaint = new Paint();
             linePaint.setColor(Color.argb(50, 0, 0, 0));
             linePaint.setStyle(mStyle);
@@ -285,8 +416,9 @@ public class FabricView extends View {
 
     /**
      * Draws a graph paper background on the view
+     *
      * @param canvas the canvas to draw on
-     * @param paint the paint to use
+     * @param paint  the paint to use
      */
     private void drawGraphPaperBackground(Canvas canvas, Paint paint) {
         int i = 0;
@@ -314,8 +446,9 @@ public class FabricView extends View {
 
     /**
      * Draws a notebook paper background on the view
+     *
      * @param canvas the canvas to draw on
-     * @param paint the paint to use
+     * @param paint  the paint to use
      */
     private void drawNotebookPaperBackground(Canvas canvas, Paint paint) {
         int i = 0;
@@ -339,13 +472,15 @@ public class FabricView extends View {
 
     /**
      * Draw text on the screen
+     *
      * @param text the text to draw
-     * @param x the x location of the text
-     * @param y the y location of the text
-     * @param p the paint to use
+     * @param x    the x location of the text
+     * @param y    the y location of the text
+     * @param p    the paint to use
      */
     public void drawText(String text, int x, int y, Paint p) {
         mDrawableList.add(new CText(text, x, y, p));
+        mUndoList.clear();
         invalidate();
     }
 
@@ -361,6 +496,7 @@ public class FabricView extends View {
 
     /**
      * Retrieve the region needing to be redrawn
+     *
      * @param eventX The current x location of the touch
      * @param eventY the current y location of the touch
      */
@@ -373,12 +509,15 @@ public class FabricView extends View {
     }
 
 
-
     public void undo() {
         if (mDrawableList.size() > 0) {
-
-            mUndoList.add(mDrawableList.get(mDrawableList.size()-1));
-            mDrawableList.remove(mDrawableList.size()-1);
+            CDrawable toUndo = mDrawableList.get(mDrawableList.size() - 1);
+            mUndoList.add(toUndo);
+            mDrawableList.remove(mDrawableList.size() - 1);
+            if(toUndo instanceof CTransform) {
+                CTransform t = (CTransform)toUndo;
+                t.getDrawable().removeTransform(t);
+            }
 
             invalidate();
         }
@@ -386,9 +525,14 @@ public class FabricView extends View {
 
     public void redo() {
         if (mUndoList.size() > 0) {
-
-            mDrawableList.add(mUndoList.get(mUndoList.size()-1));
-            mUndoList.remove(mUndoList.size()-1);
+            CDrawable toRedo = mUndoList.get(mUndoList.size() - 1);
+            mDrawableList.add(toRedo);
+            mDrawableList.addAll(toRedo.getTransforms());
+            mUndoList.remove(toRedo);
+            if(toRedo instanceof CTransform) {
+                CTransform t = (CTransform)toRedo;
+                t.getDrawable().addTransform(t);
+            }
 
             invalidate();
         }
@@ -396,12 +540,14 @@ public class FabricView extends View {
 
     /**
      * Clean the canvas, remove everything drawn on the canvas.
+     * Before calling this, ask the user to confirm because this cannot be undone.
      */
     public void cleanPage() {
         // remove everything from the list
-        while (!(mDrawableList.isEmpty())) {
-            mDrawableList.remove(0);
-        }
+        mDrawableList.clear();
+        currentPath = null;
+        mUndoList.clear();
+        savePoint = 0;
         // request to redraw the canvas
         invalidate();
     }
@@ -420,6 +566,7 @@ public class FabricView extends View {
         bitmap.setWidth(width);
         bitmap.setHeight(height);
         mDrawableList.add(bitmap);
+        mUndoList.clear();
         invalidate();
     }
 
@@ -431,10 +578,10 @@ public class FabricView extends View {
 
     /**
      * Gets what has been drawn on the canvas so far as a bitmap
+     *
      * @return Bitmap of the canvas.
      */
-    public Bitmap getCanvasBitmap()
-    {
+    public Bitmap getCanvasBitmap() {
         // build drawing cache of the canvas, use it to create a new bitmap, then destroy it.
         buildDrawingCache();
         Bitmap mCanvasBitmap = Bitmap.createBitmap(getDrawingCache());
@@ -442,6 +589,16 @@ public class FabricView extends View {
 
         // return the created bitmap.
         return mCanvasBitmap;
+    }
+
+    public Bitmap getCroppedCanvasBitmap() {
+        if(cropBounds == null) {
+            //No pixels at all
+            return null;
+        }
+        Bitmap mCanvasBitmap = getCanvasBitmap();
+        Bitmap cropped = Bitmap.createBitmap(mCanvasBitmap, cropBounds.left, cropBounds.top, cropBounds.width(), cropBounds.height());
+        return cropped;
     }
 
     public int getColor() {
@@ -499,7 +656,104 @@ public class FabricView extends View {
             interactionMode = LOCKED_MODE;
 
         this.mInteractionMode = interactionMode;
+        invalidate();
     }
 
+    public List<CDrawable> getDrawablesList() {
+        return mDrawableList;
+    }
+
+    public void markSaved() {
+        savePoint = mDrawableList.size();
+    }
+
+    public boolean isSaved() {
+        return savePoint == mDrawableList.size();
+    }
+
+    public List<CDrawable> getUnsavedDrawablesList() {
+        if (savePoint > mDrawableList.size()) {
+            //Some things were deleted.
+            return new ArrayList<>();
+        }
+        return mDrawableList.subList(savePoint, mDrawableList.size());
+    }
+
+    public void revertUnsaved() {
+        List<CDrawable> unsaved = getUnsavedDrawablesList();
+        for (CDrawable d :
+                unsaved) {
+            deleteDrawable(d);
+        }
+    }
+
+    public void selectLastDrawn() {
+        if (mDrawableList.isEmpty()) {
+            return;
+        }
+
+        ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
+        while (li.hasPrevious()) {
+            CDrawable d = li.previous();
+            if (d instanceof CTransform) {
+                continue;
+            }
+            selected = d;
+            break;
+        }
+        invalidate();
+    }
+
+    public CDrawable getSelection() {
+        return selected;
+    }
+
+    public void deSelect() {
+        selected = null;
+        invalidate();
+    }
+
+    public void deleteSelection() {
+        if (selected == null) {
+            return;
+        }
+        deleteDrawable(selected);
+        selected = null;
+    }
+
+    public void deleteDrawable(CDrawable d) {
+        if (d == null) {
+            return;
+        }
+        ArrayList<CDrawable> toDelete = new ArrayList<>();
+        toDelete.add(d);
+        toDelete.addAll(d.getTransforms());
+        mDrawableList.removeAll(toDelete);
+        if (deletionListener != null) {
+            deletionListener.deleted(d);
+        }
+        mUndoList.add(d);
+        invalidate();
+    }
+
+    public void setDeleteIcon(Bitmap newIcon) {
+        deleteIcon = newIcon;
+    }
+
+    public void setDeletionListener(DeletionListener newListener) {
+        deletionListener = newListener;
+    }
+
+    public interface DeletionListener {
+        void deleted(CDrawable drawable);
+    }
+
+    public int getSelectionColor() {
+        return selectionColor;
+    }
+
+    public void setSelectionColor(int selectionColor) {
+        this.selectionColor = selectionColor;
+    }
 
 }

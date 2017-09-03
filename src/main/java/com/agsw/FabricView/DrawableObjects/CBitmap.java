@@ -2,16 +2,16 @@ package com.agsw.FabricView.DrawableObjects;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 
 /**
  * Created by antwan on 10/3/2015.
  */
-public class CBitmap implements CDrawable {
-    private int x, y, height, width;
+public class CBitmap extends CDrawable {
     private Bitmap mBitmap;
-    private Paint mPaint;
-    private int mRotDegree;
 
     public CBitmap(Bitmap src, int x, int y) {
         this(src, x, y, null);
@@ -19,62 +19,64 @@ public class CBitmap implements CDrawable {
 
     public CBitmap(Bitmap src, int x, int y, Paint p) {
         mBitmap = src;
+        setHeight(mBitmap.getHeight());
+        setWidth(mBitmap.getWidth());
         setXcoords(x);
         setYcoords(y);
         setPaint(p);
     }
 
-    @Override
-    public Paint getPaint() {
-        return mPaint;
+    public CBitmap(Bitmap src, int x, int y, int height, int width) {
+        this(src, x, y, height, width, null);
     }
 
-    @Override
-    public void setPaint(Paint p) {
-        mPaint = p;
+    public CBitmap(Bitmap src, int x, int y, int height, int width, Paint p) {
+        mBitmap = Bitmap.createScaledBitmap(mBitmap, height, width, true);
+        setHeight(height);
+        setWidth(width);
+        setXcoords(x);
+        setYcoords(y);
+        setPaint(p);
     }
 
-    public void setHeight(int height) {
-        this.height = height;
-    }
-
-    public void setWidth(int width) {
-        this.width = width;
-    }
-
-    @Override
-    public int getXcoords() {
-        return x;
-    }
-
-    @Override
-    public int getYcoords() {
-        return y;
-    }
-
-    @Override
-    public void setXcoords(int x) {
-        this.x = x;
-    }
-
-    @Override
-    public void setYcoords(int y) {
-        this.y = y;
+    public Bitmap getBitmap() {
+        return mBitmap;
     }
 
     @Override
     public void draw(Canvas canvas) {
-        Bitmap nsrc = Bitmap.createScaledBitmap(mBitmap, width, height, true);
-        canvas.drawBitmap(nsrc, x, y, mPaint);
+        Matrix matrix = new Matrix();
+        for (CTransform t:
+                getTransforms()) {
+            t.applyTransform(matrix);
+        }
+        Bitmap canvasBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas temp = new Canvas(canvasBitmap);
+        canvas.save();
+        canvas.concat(matrix);
+        canvas.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
+        canvas.restore();
+//        Bitmap transformedBitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
+
+        canvas.drawBitmap(canvasBitmap, 0, 0, getPaint());
     }
 
     @Override
-    public int getRotation() {
-        return mRotDegree;
-    }
+    public boolean equals(Object obj) {
+        if(this == obj) {
+            return true;
+        }
+        if(!super.equals(obj)) {
+            return false;
+        }
 
-    @Override
-    public void setRotation(int degree) {
-        mRotDegree = degree;
+        if (!(obj instanceof CBitmap)) {
+            return false;
+        }
+        CBitmap other = (CBitmap) obj;
+        if(other.mBitmap == null && this.mBitmap == null) {
+            return true;
+        }
+        return other.mBitmap.sameAs(this.mBitmap);
     }
 }
