@@ -42,7 +42,7 @@ dependencies {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    destinationDir = file("javadoc/")
+    destinationDir = file("docs/")
     failOnError false
     exclude '**/BuildConfig.java'
     exclude '**/R.java'
