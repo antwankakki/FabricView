@@ -13,23 +13,36 @@ public class CScale extends CTransform {
     private float mFactor = 0.0f;
 
     /**
+     * Constructor.
      * You must call setDirection after calling this constructor.
+     * @param drawable The object this scaling affects.
      */
     public CScale(CDrawable drawable) {
         setDrawable(drawable);
     }
 
-    public CScale(CDrawable drawable, float direction) {
+    /**
+     * Constructor.
+     * @param drawable The object this scaling affects.
+     * @param factor The scaling amount. Set to number between 0 and 1 to shrink, or above 1 to grow.
+     */
+    public CScale(CDrawable drawable, float factor) {
         setDrawable(drawable);
-        mFactor = direction;
+        mFactor = factor;
     }
 
-
+    /**
+     * @return The scaling factor.
+     */
     public float getFactor() {
         return mFactor;
     }
 
-    public void setDirection(float factor) {
+    /**
+     * Setter for the scaling factor.
+     * @param factor The new scaling factor. Set to number between 0 and 1 to shrink, or above 1 to grow.
+     */
+    public void setFactor(float factor) {
         mFactor = factor;
     }
 

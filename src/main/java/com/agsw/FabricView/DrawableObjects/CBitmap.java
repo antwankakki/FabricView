@@ -9,14 +9,29 @@ import android.graphics.RectF;
 
 /**
  * Created by antwan on 10/3/2015.
+ * This drawable object represents a bitmap image.
  */
 public class CBitmap extends CDrawable {
     private Bitmap mBitmap;
 
+    /**
+     * Constructor. Creates a bitmap object at the specified position.
+     * @param src The source bitmap.
+     * @param x The horizontal position.
+     * @param y The vertical position.
+     */
     public CBitmap(Bitmap src, int x, int y) {
         this(src, x, y, null);
     }
 
+    /**
+     * Constructor. Creates a bitmap object at the specified position. The width and the height are
+     * obtained from the bitmap.
+     * @param src The source bitmap.
+     * @param x The horizontal position.
+     * @param y The vertical position.
+     * @param p The paint to use.
+     */
     public CBitmap(Bitmap src, int x, int y, Paint p) {
         mBitmap = src;
         setHeight(mBitmap.getHeight());
@@ -26,10 +41,27 @@ public class CBitmap extends CDrawable {
         setPaint(p);
     }
 
+    /**
+     * Constructor. Creates a bitmap object at the specified position.
+     * @param src The source bitmap.
+     * @param x The horizontal position.
+     * @param y The vertical position.
+     * @param height the height of this object.
+     * @param width the width of this object.
+     */
     public CBitmap(Bitmap src, int x, int y, int height, int width) {
         this(src, x, y, height, width, null);
     }
 
+    /**
+     * Constructor. Creates a bitmap object at the specified position.
+     * @param src The source bitmap.
+     * @param x The horizontal position.
+     * @param y The vertical position.
+     * @param height the height of this object.
+     * @param width the width of this object.
+     * @param p The paint to use.
+     */
     public CBitmap(Bitmap src, int x, int y, int height, int width, Paint p) {
         mBitmap = Bitmap.createScaledBitmap(mBitmap, height, width, true);
         setHeight(height);
@@ -39,6 +71,9 @@ public class CBitmap extends CDrawable {
         setPaint(p);
     }
 
+    /**
+     * @return The bitmap encapsulated in this class.
+     */
     public Bitmap getBitmap() {
         return mBitmap;
     }
