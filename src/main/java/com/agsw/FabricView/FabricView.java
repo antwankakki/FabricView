@@ -33,13 +33,13 @@ import java.util.Vector;
  * How to use:
  * <H1>Layout</H1>
  * Create a view in your layout, like this: <pre>
- <com.agsw.FabricView.FabricView
+ &lt;com.agsw.FabricView.FabricView
  android:id="@+id/my_fabric_view"
  android:layout_width="match_parent"
  android:layout_height="match_parent"
  android:padding="20dp"
  android:text="@string/my_fabric_view_title"
- /></pre>
+ /&gt;</pre>
  * <H1>Activity code</H1>
  * Retrieve and configure your FabricView: <pre>
 FabricView myFabricView = (FabricView) parent.findViewById(R.id.my_fabric_view); //Retrieve by ID
@@ -70,14 +70,14 @@ myFabricView.deleteDrawable(); //Removes a single object and its transforms.
 //Retrieving the picture from the view:
 Bitmap fullResult = myFabricView.getCanvasBitmap(); //Gets a copy of the whole view. This includes decorations such as selection rectangle. So make sure you switch to LOCKED_MODE before calling.
 Bitmap croppedResult = myFabricView.getCroppedCanvasBitmap(); //Same as previous, except with no margin around the picture.
-List&lt;CDrabable> drawablesList = myFabricView.getDrawablesList(); //Returns all the drawables of the view. See next sections.
+List&lt;CDrabable&gt; drawablesList = myFabricView.getDrawablesList(); //Returns all the drawables of the view. See next sections.
 CDrawable currentSelection = myFabricView.getSelection();
 
 //Save point functions
 boolean everythingIsSaved = myFabricView.isSaved(); //true = there were no operations added or undone after the last call to markSaved().
 markSaved(); //Indicates that everything was saved. You can save the bitmap or the drawable objects. (See previous section.)
 revertUnsaved(); //Restore the drawables to the last save point.
-List&lt;CDrabable> unsavedDrawablesList = getUnsavedDrawablesList(); //Returns all the drawables that were not saved yet.</pre>
+List&lt;CDrabable&gt; unsavedDrawablesList = getUnsavedDrawablesList(); //Returns all the drawables that were not saved yet.</pre>
  * <H1>Drawables and Transforms</H1>
  * The list of visible objects inside the view is a stack. There are two kinds: CDrawable and CTransform (subclass of the latter).
  * A CDrawable is an object that can be "drawn" on the canvas. A CTransform represents a modification of a CDrawable.
