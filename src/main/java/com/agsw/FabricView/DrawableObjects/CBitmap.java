@@ -87,10 +87,10 @@ public class CBitmap extends CDrawable {
         }
         Bitmap canvasBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas temp = new Canvas(canvasBitmap);
-        canvas.save();
-        canvas.concat(matrix);
-        canvas.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
-        canvas.restore();
+        temp.save();
+        temp.concat(matrix);
+        temp.drawBitmap(mBitmap, getXcoords(), getYcoords(), getPaint());
+        temp.restore();
 //        Bitmap transformedBitmap = Bitmap.createBitmap(mBitmap, 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
 
         canvas.drawBitmap(canvasBitmap, 0, 0, getPaint());

@@ -1,6 +1,8 @@
 package com.agsw.FabricView.DrawableObjects;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
@@ -9,6 +11,7 @@ import android.graphics.Rect;
  * This class represents a piece of text written on the canvas.
  */
 public class CText extends CDrawable {
+    private static final int MARGIN = 20;
     private String mText;
 
     /**
@@ -20,18 +23,24 @@ public class CText extends CDrawable {
      * @param p The paint to use for the writing.
      */
     public CText(String s, int x, int y, Paint p) {
+        setPaint(p); //Must be before setText()
         setText(s);
         setYcoords(y);
         setXcoords(x);
-        setPaint(p);
         calculateTextSizes();
     }
 
     private void calculateTextSizes() {
+        Paint p = getPaint();
+        Paint.FontMetrics metric = p.getFontMetrics();
+        int textHeight = (int) Math.ceil(metric.descent - metric.ascent);
+        int y = (int)(textHeight - metric.descent);
+
         Rect bounds = new Rect();
         getPaint().getTextBounds(getText(), 0, getText().length(), bounds);
-        setHeight(bounds.height());
-        setWidth(bounds.width());
+       // setYcoords(getYcoords() + y);
+        setHeight(bounds.height() + (MARGIN*2));
+        setWidth(bounds.width()+ (MARGIN*2));
     }
 
     /**
@@ -53,16 +62,39 @@ public class CText extends CDrawable {
     @Override
     public void setPaint(Paint p) {
         super.setPaint(p);
-        calculateTextSizes();
+        if(getText() != null) {
+            calculateTextSizes();
+        }
     }
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawText(getText(), (float) getXcoords(), (float) getYcoords(), getPaint());
+        Paint p = getPaint();
+        Paint.FontMetrics metric = p.getFontMetrics();
+        int textHeight = (int) Math.ceil(metric.descent - metric.ascent);
+        int y = (int)(textHeight - metric.descent);
+
+        Matrix matrix = new Matrix();
+        for (CTransform t:
+                getTransforms()) {
+            t.applyTransform(matrix);
+        }
+
+        Bitmap canvasBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas temp = new Canvas(canvasBitmap);
+        temp.save();
+        temp.concat(matrix);
+        temp.drawText(getText(), (float) (getXcoords() + MARGIN), (float) (getYcoords() + y + MARGIN), p);
+        temp.restore();
+
+        canvas.drawBitmap(canvasBitmap, 0, 0, getPaint());
     }
 
     @Override
     public boolean equals(Object obj) {
+        if(this == obj) {
+            return true;
+        }
         if(!super.equals(obj)) {
             return false;
         }

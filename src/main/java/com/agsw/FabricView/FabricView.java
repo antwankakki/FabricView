@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -364,7 +365,7 @@ public class FabricView extends View {
                 lastTouchY = eventY;
                 mDrawableList.add(currentPath);
                 mUndoList.clear();
-
+                getParent().requestDisallowInterceptTouchEvent(true);
                 return true;
             case MotionEvent.ACTION_MOVE:
                 float dx = Math.abs(eventX - lastTouchX);
@@ -423,6 +424,7 @@ public class FabricView extends View {
         ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                hovering = null;
                 pressStartTime = SystemClock.uptimeMillis();
                 pressedX = event.getX();
                 pressedY = event.getY();
@@ -437,6 +439,9 @@ public class FabricView extends View {
                         hovering = d;
                         break;
                     }
+                }
+                if(hovering != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 return true;
             case MotionEvent.ACTION_UP:
@@ -562,9 +567,15 @@ public class FabricView extends View {
      * @param text the text to draw
      * @param x    the x location of the text
      * @param y    the y location of the text
-     * @param p    the paint to use
+     * @param p    the paint to use. This is used for the TextSize, color. If null, the defaut is black with 20sp size.
      */
     public void drawText(String text, int x, int y, Paint p) {
+        if(p==null) {
+            int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 20, getContext().getResources().getDisplayMetrics());
+            p = new Paint();
+            p.setTextSize(px);
+            p.setColor(Color.BLACK);
+        }
         mDrawableList.add(new CText(text, x, y, p));
         mUndoList.clear();
         invalidate();

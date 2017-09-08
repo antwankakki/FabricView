@@ -64,11 +64,14 @@ public class CTranslation extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
-        m.setTranslate(mDirection.get(0), mDirection.get(1));
+        m.postTranslate(mDirection.get(0), mDirection.get(1));
     }
 
     @Override
     public boolean equals(Object obj) {
+        if(this == obj) {
+            return true;
+        }
 
         if (!(obj instanceof CTranslation)) {
             return false;
