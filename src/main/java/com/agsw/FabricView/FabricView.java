@@ -30,6 +30,62 @@ import java.util.Vector;
 /**
  * Created by antwan on 10/3/2015.
  * A library for creating graphics on an object model on top of canvas.
+ * How to use:
+ * <H1>Layout</H1>
+ * Create a view in your layout, like this: <pre>
+ &lt;com.agsw.FabricView.FabricView
+ android:id="@+id/my_fabric_view"
+ android:layout_width="match_parent"
+ android:layout_height="match_parent"
+ android:padding="20dp"
+ android:text="@string/my_fabric_view_title"
+ /&gt;</pre>
+ * <H1>Activity code</H1>
+ * Retrieve and configure your FabricView: <pre>
+FabricView myFabricView = (FabricView) parent.findViewById(R.id.my_fabric_view); //Retrieve by ID
+ //Configuration. All of which is optional. Defaults are marked with an asterisk here.
+myFabricView.setBackgroundMode(BACKGROUND_STYLE_BLANK); //Set the background style (BACKGROUND_STYLE_BLANK*, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_GRAPH_PAPER)
+
+myFabricView.setInteractionMode(FabricView.DRAW_MODE); //Set its draw mode (DRAW_MODE*, SELECT_MODE, ROTATE_MODE, LOCKED_MODE)
+myFabricView.setDeleteIcon(deleteIcon); //If you don't like the default delete icon
+myFabricView.setColor(R.color.purple); //Line color
+myFabricView.setSize(10); //Line width
+myFabricView.setSelectionColor(R.color.lightergray); //Selection box color
+//To be notified of any deletion:
+myFabricView.setDeletionListener(new FabricView.DeletionListener() {
+  public void deleted(CDrawable drawable) {
+    doSomethingAboutThis(drawable);
+  }
+});
+
+//Manipulations... The following functions could be attached to buttons of your choosing:
+myFabricView.cleanPage(); //Erases everything.
+myFabricView.undo(); //Cancels the last operation.
+myFabricView.redo(); //Reinstates the last undone operation.
+myFabricView.selectLastDrawn(); //Mark the last drawn object as selected.
+myFabricView.deSelect(); //Unmark all objects for selection.
+myFabricView.deleteSelection(); //Removes all selected objects and its transforms.
+myFabricView.deleteDrawable(); //Removes a single object and its transforms.
+
+//Retrieving the picture from the view:
+Bitmap fullResult = myFabricView.getCanvasBitmap(); //Gets a copy of the whole view. This includes decorations such as selection rectangle. So make sure you switch to LOCKED_MODE before calling.
+Bitmap croppedResult = myFabricView.getCroppedCanvasBitmap(); //Same as previous, except with no margin around the picture.
+List&lt;CDrabable&gt; drawablesList = myFabricView.getDrawablesList(); //Returns all the drawables of the view. See next sections.
+CDrawable currentSelection = myFabricView.getSelection();
+
+//Save point functions
+boolean everythingIsSaved = myFabricView.isSaved(); //true = there were no operations added or undone after the last call to markSaved().
+markSaved(); //Indicates that everything was saved. You can save the bitmap or the drawable objects. (See previous section.)
+revertUnsaved(); //Restore the drawables to the last save point.
+List&lt;CDrabable&gt; unsavedDrawablesList = getUnsavedDrawablesList(); //Returns all the drawables that were not saved yet.</pre>
+ * <H1>Drawables and Transforms</H1>
+ * The list of visible objects inside the view is a stack. There are two kinds: CDrawable and CTransform (subclass of the latter).
+ * A CDrawable is an object that can be "drawn" on the canvas. A CTransform represents a modification of a CDrawable.
+ * A CDrawable is linked to its CTransforms (see getTransforms() and hasTransforms()), and each CTransform is aware of its
+ * CDrawable (see getDrawable()).
+ *
+ * The subclasses of CDrawable are CPath (a set of continuous lines), CBitmap, and CText. Another subclass is CTransform, and this one
+ * has its one subclasses which are CRotation, CScale, and CTranslation.
  */
 public class FabricView extends View {
 
@@ -68,7 +124,9 @@ public class FabricView extends View {
     // background mode for the library, default to blank
     private int mBackgroundMode = BACKGROUND_STYLE_BLANK;
 
-    // Default Notebook left line color
+    /**
+     * Default Notebook left line color. Value = Color.Red.
+     */
     public static final int NOTEBOOK_LEFT_LINE_COLOR = Color.RED;
 
     // Flag indicating that we are waiting for a location for the text
@@ -90,20 +148,45 @@ public class FabricView extends View {
     /*********************************************************************************************/
     /************************************     FLAGS    *******************************************/
     /*********************************************************************************************/
-    // Default Background Styles
+
+    //Background modes:
+    /**
+     * Background mode, used in setBackgroundMode(). No lines will be drawn on the background. This is the default.
+     */
     public static final int BACKGROUND_STYLE_BLANK = 0;
+    /**
+     * Background mode, used in setBackgroundMode(). Will draw blue lines horizontally and a red line on the left vertically.
+     */
     public static final int BACKGROUND_STYLE_NOTEBOOK_PAPER = 1;
+    /**
+     * Background mode, used in setBackgroundMode(). Will draw blue lines horizontally and vertically.
+     */
     public static final int BACKGROUND_STYLE_GRAPH_PAPER = 2;
 
-    // Interactive Modes
+    //Interactive Modes:
+    /**
+     * Interactive modes: Will let the user draw. This is the default.
+     */
     public static final int DRAW_MODE = 0;
+    /**
+     * Interactive modes: Will let the user select objects.
+     */
     public static final int SELECT_MODE = 1;
+    /**
+     * Interactive modes: Will let the user rotate objects. This is not yet supported.
+     */
     public static final int ROTATE_MODE = 2; // TODO Support Object Rotation.
+    /**
+     * Interactive modes: Will remove all decorations and the user won't be able to modify anything. This is the mode to use when retrieving the bitmaps with getCroppedCanvasBitmap() or getCanvasBitmap().
+     */
     public static final int LOCKED_MODE = 3;
 
     /*********************************************************************************************/
     /**********************************     CONSTANTS    *****************************************/
     /*********************************************************************************************/
+    /**
+     * Number of pixels that will be on the left side of the red line when in BACKGROUND_STYLE_GRAPH_PAPER background mode.
+     */
     public static final int NOTEBOOK_LEFT_LINE_PADDING = 120;
     private static final int SELECTION_LINE_WIDTH = 2;
 
@@ -112,11 +195,14 @@ public class FabricView extends View {
     /*********************************************************************************************/
     private float mZoomLevel = 1.0f; //TODO Support Zoom
     private float mHorizontalOffset = 1, mVerticalOffset = 1; // TODO Support Offset and Viewport
+    /**
+     * Unused at this time.
+     */
     public int mAutoscrollDistance = 100; // TODO Support Autoscroll
     private Rect cropBounds = null;
 
     /**
-     * Default Constructor, sets sane values.
+     *  Constructor, sets defaut values.
      *
      * @param context the activity that containts the view
      * @param attrs   view attributes
@@ -196,7 +282,7 @@ public class FabricView extends View {
     /*********************************************************************************************/
 
     /**
-     * Handles user touch event
+     * Handles user touch events.
      *
      * @param event the user's motion event
      * @return true, the event is consumed.
@@ -508,7 +594,9 @@ public class FabricView extends View {
         dirtyRect.bottom = Math.max(lastTouchY, eventY);
     }
 
-
+    /**
+     * Cancels the last operation. Works on both CDrawable and CTransform.
+     */
     public void undo() {
         if (mDrawableList.size() > 0) {
             CDrawable toUndo = mDrawableList.get(mDrawableList.size() - 1);
@@ -523,6 +611,9 @@ public class FabricView extends View {
         }
     }
 
+    /**
+     * Re-instates the last undone operation.
+     */
     public void redo() {
         if (mUndoList.size() > 0) {
             CDrawable toRedo = mUndoList.get(mUndoList.size() - 1);
@@ -540,7 +631,7 @@ public class FabricView extends View {
 
     /**
      * Clean the canvas, remove everything drawn on the canvas.
-     * Before calling this, ask the user to confirm because this cannot be undone.
+     * WARNING: Before calling this, ask the user to confirm because <b>this cannot be undone</b>.
      */
     public void cleanPage() {
         // remove everything from the list
@@ -591,6 +682,11 @@ public class FabricView extends View {
         return mCanvasBitmap;
     }
 
+    /**
+     * Gets what has been drawn on the canvas so far as a bitmap. Removes any margin around the drawn objects.
+     *
+     * @return Bitmap of the canvas, cropped.
+     */
     public Bitmap getCroppedCanvasBitmap() {
         if(cropBounds == null) {
             //No pixels at all
@@ -601,52 +697,93 @@ public class FabricView extends View {
         return cropped;
     }
 
+    /**
+     * @return the drawing line color. Default is Color.BLACK.
+     */
     public int getColor() {
         return mColor;
     }
 
+    /**
+     * Setter for the the drawing line color.
+     * @param mColor The new color.
+     */
     public void setColor(int mColor) {
         this.mColor = mColor;
     }
 
+    /**
+     * @return the background color. Default is Color.WHITE.
+     */
     public int getBackgroundColor() {
         return mBackgroundColor;
     }
 
+    /**
+     * Setter for the background color.
+     * @param mBackgroundColor The new background color.
+     */
+    public void setBackgroundColor(int mBackgroundColor) {
+        this.mBackgroundColor = mBackgroundColor;
+    }
+
+    /**
+     * @return the background decorations mode. Default is BACKGROUND_STYLE_BLANK.
+     */
     public int getBackgroundMode() {
         return mBackgroundMode;
     }
 
+    /**
+     * Setter for the background decorations mode. Can be BACKGROUND_STYLE_BLANK*, BACKGROUND_STYLE_NOTEBOOK_PAPER, or BACKGROUND_STYLE_GRAPH_PAPER.
+     * @param mBackgroundMode
+     */
     public void setBackgroundMode(int mBackgroundMode) {
         this.mBackgroundMode = mBackgroundMode;
         invalidate();
     }
 
-    public void setBackgroundColor(int mBackgroundColor) {
-        this.mBackgroundColor = mBackgroundColor;
-    }
-
+    /**
+     * @return The drawing style. Can be Paint.Style.FILL, Paint.Style.STROKE, or Paint.Style.FILL_AND_STROKE. Default is Paint.Style.STROKE.
+     */
     public Paint.Style getStyle() {
         return mStyle;
     }
 
+    /**
+     * Setter for the drawing style.
+     * @param mStyle The new drawing style. Can be Can be FILL, STROKE, or FILL_AND_STROKE.
+     */
     public void setStyle(Paint.Style mStyle) {
         this.mStyle = mStyle;
     }
 
+    /**
+     * @return The width of the line for drawing.
+     */
     public float getSize() {
         return mSize;
     }
 
+    /**
+     * Setter for the line width. The default is 5.
+     * @param mSize The new width for the line.
+     */
     public void setSize(float mSize) {
         this.mSize = mSize;
     }
 
-
+    /**
+     * @return The interaction mode. The default is DRAW_MODE.
+     */
     public int getInteractionMode() {
         return mInteractionMode;
     }
 
+    /**
+     * Setter for the interaction mode. Can be DRAW_MODE, SELECT_MODE, ROTATE_MODE, or LOCKED_MODE.
+     * @param interactionMode
+     */
     public void setInteractionMode(int interactionMode) {
 
         // if the value passed is not any of the flags, set the library to locked mode
@@ -659,18 +796,30 @@ public class FabricView extends View {
         invalidate();
     }
 
+    /**
+     * @return the list of all CDrawables in order of insertion.
+     */
     public List<CDrawable> getDrawablesList() {
         return mDrawableList;
     }
 
+    /**
+     * Indicates that all CDrawables in the list have been saved.
+     */
     public void markSaved() {
         savePoint = mDrawableList.size();
     }
 
+    /**
+     * @return true if there were no new operations done after the last call to markSaved().
+     */
     public boolean isSaved() {
         return savePoint == mDrawableList.size();
     }
 
+    /**
+     * @return The list of all CDrawables that have been added after the last call to markSaved().
+     */
     public List<CDrawable> getUnsavedDrawablesList() {
         if (savePoint > mDrawableList.size()) {
             //Some things were deleted.
@@ -679,6 +828,9 @@ public class FabricView extends View {
         return mDrawableList.subList(savePoint, mDrawableList.size());
     }
 
+    /**
+     * Deletes all CDrawables that were added after the last call to markSaved().
+     */
     public void revertUnsaved() {
         List<CDrawable> unsaved = getUnsavedDrawablesList();
         for (CDrawable d :
@@ -687,6 +839,9 @@ public class FabricView extends View {
         }
     }
 
+    /**
+     * Marks the last inserted CDrawable as the selected object.
+     */
     public void selectLastDrawn() {
         if (mDrawableList.isEmpty()) {
             return;
@@ -704,15 +859,24 @@ public class FabricView extends View {
         invalidate();
     }
 
+    /**
+     * @return The currently selected CDrawable.
+     */
     public CDrawable getSelection() {
         return selected;
     }
 
+    /**
+     * Cancels all selection. No object will be selected.
+     */
     public void deSelect() {
         selected = null;
         invalidate();
     }
 
+    /**
+     * Deletes the currently selected object. No object will be selected after that.
+     */
     public void deleteSelection() {
         if (selected == null) {
             return;
@@ -721,37 +885,63 @@ public class FabricView extends View {
         selected = null;
     }
 
-    public void deleteDrawable(CDrawable d) {
-        if (d == null) {
+    /**
+     * Removes a specific CDrawable.
+     * @param drawable The object to remove.
+     */
+    public void deleteDrawable(CDrawable drawable) {
+        if (drawable == null) {
             return;
         }
         ArrayList<CDrawable> toDelete = new ArrayList<>();
-        toDelete.add(d);
-        toDelete.addAll(d.getTransforms());
+        toDelete.add(drawable);
+        toDelete.addAll(drawable.getTransforms());
         mDrawableList.removeAll(toDelete);
         if (deletionListener != null) {
-            deletionListener.deleted(d);
+            deletionListener.deleted(drawable);
         }
-        mUndoList.add(d);
+        mUndoList.add(drawable);
         invalidate();
     }
 
+    /**
+     * Setter for the "delete" icon. The default is android.R.drawable.ic_menu_delete.
+     * @param newIcon The new delete icon.
+     */
     public void setDeleteIcon(Bitmap newIcon) {
         deleteIcon = newIcon;
     }
 
+    /**
+     * Setter for the deletion event listener. Refer to the Observer pattern.
+     * @param newListener The listener for any deletion event.
+     */
     public void setDeletionListener(DeletionListener newListener) {
         deletionListener = newListener;
     }
 
+    /**
+     * This interface must be implemented by your deletion event listener.
+     */
     public interface DeletionListener {
+        /**
+         * This method will be called whenever a CDrawable is deleted.
+         * @param drawable The object that was deleted.
+         */
         void deleted(CDrawable drawable);
     }
 
+    /**
+     * @return The current selection rectangle color.  The default is Color.DKGRAY.
+     */
     public int getSelectionColor() {
         return selectionColor;
     }
 
+    /**
+     * Setter for the selection rectangle color.
+     * @param selectionColor The new selection rectangle color.
+     */
     public void setSelectionColor(int selectionColor) {
         this.selectionColor = selectionColor;
     }

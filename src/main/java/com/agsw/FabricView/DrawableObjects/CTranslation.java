@@ -9,28 +9,41 @@ import java.util.Vector;
 
 /**
  * Created by emmanuel.proulx on 2017-08-27.
+ * Represents a translation towards a certain direction, which in turn is represented by a vector.
  */
 
 public class CTranslation extends CTransform {
     private Vector<Integer> mDirection = new Vector<Integer>(2);
 
     /**
-     * You must call setDirection after calling this constructor.
+     * Constructor. You must call setDirection after calling this constructor.
+     * @param drawable The object this translation affects.
      */
     public CTranslation(CDrawable drawable) {
         setDrawable(drawable);
     }
 
+    /**
+     * Constructor. You must call setDirection after calling this constructor.
+     * @param drawable The object this translation affects.
+     * @param direction The direction of the translation. Two dimentional vector (x, y).
+     */
     public CTranslation(CDrawable drawable, Vector<Integer> direction) {
         setDrawable(drawable);
         mDirection = direction;
     }
 
-
+    /**
+     * @return The direction of the translation. Two dimentional vector (x, y).
+     */
     public Vector<Integer> getDirection() {
         return mDirection;
     }
 
+    /**
+     * Setter for the translation direction
+     * @param direction The new direction of the translation. Two dimentional vector (x, y).
+     */
     public void setDirection(Vector<Integer> direction) {
         mDirection = direction;
     }

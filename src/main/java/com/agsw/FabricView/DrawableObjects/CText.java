@@ -6,12 +6,18 @@ import android.graphics.Rect;
 
 /**
  * Created by antwan on 10/3/2015.
+ * This class represents a piece of text written on the canvas.
  */
 public class CText extends CDrawable {
     private String mText;
 
     /**
+     * Constructor.
      * Make sure that the paint has a set text size by calling paint.setTextSize().
+     * @param s The string to write.
+     * @param x The horizontal position to put the text.
+     * @param y The vertical position to put the text.
+     * @param p The paint to use for the writing.
      */
     public CText(String s, int x, int y, Paint p) {
         setText(s);
@@ -28,11 +34,18 @@ public class CText extends CDrawable {
         setWidth(bounds.width());
     }
 
+    /**
+     * Setter for the text to write.
+     * @param t The new text to write.
+     */
     public void setText(String t) {
         mText = t;
         calculateTextSizes();
     }
 
+    /**
+     * @return The text to write.
+     */
     public String getText() {
         return mText;
     }

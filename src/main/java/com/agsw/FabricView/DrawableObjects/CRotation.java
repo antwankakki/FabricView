@@ -7,27 +7,41 @@ import android.graphics.RectF;
 
 /**
  * Created by emmanuel.proulx on 2017-08-27.
+ * This class represents a rotation transform.
  */
 
 public class CRotation extends CTransform {
     private int mRotDegree;
 
     /**
-     * You must call setRotation after calling this contructor.
+     * Constructor. You must call setRotation after calling this contructor.
+     * @param drawable The object this rotation affects.
      */
     public CRotation(CDrawable drawable) {
         setDrawable(drawable);
     }
 
+    /**
+     * Constructor.
+     * @param drawable The object this rotation affects.
+     * @param rotation The number of degrees for this rotation.
+     */
     public CRotation(CDrawable drawable, int rotation) {
         setDrawable(drawable);
         mRotDegree = rotation;
     }
 
+    /**
+     * @return The number of degrees for this rotation.
+     */
     public int getRotation() {
         return mRotDegree;
     }
 
+    /**
+     * Setter for this rotation, in degrees.
+     * @param degree The number of degrees for this rotation.
+     */
     public void setRotation(int degree) {
         mRotDegree = degree;
     }
