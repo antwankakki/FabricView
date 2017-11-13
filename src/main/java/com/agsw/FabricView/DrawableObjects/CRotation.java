@@ -62,12 +62,14 @@ public class CRotation extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
-        m.setRotate(mRotDegree);
+        m.postRotate(mRotDegree);
     }
 
     @Override
     public boolean equals(Object obj) {
-
+        if(this == obj) {
+            return true;
+        }
         if (!(obj instanceof CRotation)) {
             return false;
         }

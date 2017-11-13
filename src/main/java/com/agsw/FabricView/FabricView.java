@@ -1,6 +1,7 @@
 package com.agsw.FabricView;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -11,6 +12,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -21,6 +23,7 @@ import com.agsw.FabricView.DrawableObjects.CPath;
 import com.agsw.FabricView.DrawableObjects.CText;
 import com.agsw.FabricView.DrawableObjects.CTransform;
 import com.agsw.FabricView.DrawableObjects.CTranslation;
+import com.agsw.inputview.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -209,6 +212,9 @@ public class FabricView extends View {
      */
     public FabricView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        setWillNotDraw(false);
+
         setFocusable(true);
         setFocusableInTouchMode(true);
         this.setBackgroundColor(mBackgroundColor);
@@ -224,6 +230,39 @@ public class FabricView extends View {
 
         deleteIcon = BitmapFactory.decodeResource(context.getResources(),
                 android.R.drawable.ic_menu_delete);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+//        int minHeight = getSuggestedMinimumHeight() + getPaddingTop() + getPaddingBottom();
+//        int minWidth = getSuggestedMinimumWidth() + getPaddingLeft() + getPaddingRight();
+//
+//        if (minHeight > 0 && MeasureSpec.getSize(heightMeasureSpec) < minHeight) {
+//            minHeight =
+//            //heightMeasureSpec = MeasureSpec.makeMeasureSpec(minHeight, MeasureSpec.EXACTLY);
+//        }
+//        if (minWidth > 0 && MeasureSpec.getSize(widthMeasureSpec) < minWidth) {
+//            widthMeasureSpec = MeasureSpec.makeMeasureSpec(minWidth, MeasureSpec.EXACTLY);
+//        }
+//
+        //super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int minw = getPaddingLeft() + getPaddingRight() + getSuggestedMinimumWidth();
+        int w = resolveSizeAndState(minw, widthMeasureSpec, 1);
+
+        // Whatever the width ends up being, ask for a height that would let the pie
+        // get as big as it can
+        int minh = getPaddingTop() + getPaddingBottom() + getSuggestedMinimumHeight();
+        int h = resolveSizeAndState(minh, heightMeasureSpec, 1);
+
+        setMeasuredDimension(w, h);
+
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
     }
 
     /**
@@ -364,8 +403,11 @@ public class FabricView extends View {
                 lastTouchY = eventY;
                 mDrawableList.add(currentPath);
                 mUndoList.clear();
-
-                return true;
+                getParent().requestDisallowInterceptTouchEvent(true);
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                getParent().requestDisallowInterceptTouchEvent(true);
+                break;
             case MotionEvent.ACTION_MOVE:
                 float dx = Math.abs(eventX - lastTouchX);
                 float dy = Math.abs(eventY - lastTouchY);
@@ -396,7 +438,8 @@ public class FabricView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 currentPath.lineTo(eventX, eventY);
-
+                getParent().requestDisallowInterceptTouchEvent(false);
+                break;
             default:
                 return false;
         }
@@ -423,6 +466,7 @@ public class FabricView extends View {
         ListIterator<CDrawable> li = mDrawableList.listIterator(mDrawableList.size());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                hovering = null;
                 pressStartTime = SystemClock.uptimeMillis();
                 pressedX = event.getX();
                 pressedY = event.getY();
@@ -438,8 +482,14 @@ public class FabricView extends View {
                         break;
                     }
                 }
+                if(hovering != null) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
                 return true;
             case MotionEvent.ACTION_UP:
+                if(hovering != null) {
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
                 long pressDuration = SystemClock.uptimeMillis() - pressStartTime;
                 double distance = Math.sqrt(Math.pow((event.getX() - pressedX), 2) + Math.pow((event.getY() - pressedY), 2));
                 if (pressDuration < MAX_CLICK_DURATION && distance < MAX_CLICK_DISTANCE) {
@@ -465,6 +515,12 @@ public class FabricView extends View {
                 invalidate();
                 hovering = null;
                 return true;
+            case MotionEvent.ACTION_CANCEL:
+                if(hovering != null) {
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                return true;
+
         }
         return false;
     }
@@ -562,9 +618,15 @@ public class FabricView extends View {
      * @param text the text to draw
      * @param x    the x location of the text
      * @param y    the y location of the text
-     * @param p    the paint to use
+     * @param p    the paint to use. This is used for the TextSize, color. If null, the defaut is black with 20sp size.
      */
     public void drawText(String text, int x, int y, Paint p) {
+        if(p==null) {
+            int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 20, getContext().getResources().getDisplayMetrics());
+            p = new Paint();
+            p.setTextSize(px);
+            p.setColor(Color.BLACK);
+        }
         mDrawableList.add(new CText(text, x, y, p));
         mUndoList.clear();
         invalidate();

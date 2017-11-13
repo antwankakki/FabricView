@@ -2,10 +2,14 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.0'
     }
 }
 
@@ -13,12 +17,12 @@ buildscript {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
 
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName "0.1"
     }
@@ -46,4 +50,19 @@ task javadoc(type: Javadoc) {
     failOnError false
     exclude '**/BuildConfig.java'
     exclude '**/R.java'
+}
+
+def fabric_view_destination = ""
+
+task copyAar(dependsOn: "assembleDebug") {
+
+    //Add this to your local.properties file:
+    //fabric_view_destination=/other/project/folder/libs
+
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    fabric_view_destination = properties.getProperty('fabric_view_destination')
+    println 'fabric_view_destination=' + fabric_view_destination
+
+    ant.copy(file: 'build/outputs/aar/' + project.name + '-debug.aar', todir: fabric_view_destination)
 }

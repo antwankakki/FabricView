@@ -62,11 +62,14 @@ public class CScale extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
-        m.setScale(mFactor, mFactor);
+        m.postScale(mFactor, mFactor);
     }
 
     @Override
     public boolean equals(Object obj) {
+        if(this == obj) {
+            return true;
+        }
 
         if (!(obj instanceof CScale)) {
             return false;
