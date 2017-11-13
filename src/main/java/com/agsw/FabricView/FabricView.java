@@ -486,6 +486,13 @@ public class FabricView extends View {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 return true;
+            case MotionEvent.ACTION_MOVE:
+                if(hovering == null) {
+                    break; //Nothing is being dragged.
+                }
+                updateHoveringPosition(event);
+                invalidate();
+                return true;
             case MotionEvent.ACTION_UP:
                 if(hovering != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
@@ -502,14 +509,7 @@ public class FabricView extends View {
                 } else if (distance > MAX_CLICK_DISTANCE) {
                     //It was a drag. Move the object there.
                     if (hovering != null) {
-                        CTranslation trans = new CTranslation(hovering);
-                        Vector<Integer> v = new Vector<>(2);
-                        v.add((int) (event.getX() - pressedX));
-                        v.add((int) (event.getY() - pressedY));
-                        trans.setDirection(v);
-                        hovering.addTransform(trans);
-                        mDrawableList.add(trans);
-                        mUndoList.clear();
+                        updateHoveringPosition(event);
                     }
                 }
                 invalidate();
@@ -523,6 +523,48 @@ public class FabricView extends View {
 
         }
         return false;
+    }
+
+    private void updateHoveringPosition(MotionEvent event) {
+
+        double distance = Math.sqrt(Math.pow((event.getX() - pressedX), 2) + Math.pow((event.getY() - pressedY), 2));
+        if (distance < MAX_CLICK_DISTANCE) {
+            return; //Movement too small
+        }
+
+        List<CTransform> t = hovering.getTransforms();
+        CTransform lastTransform;
+        //Find last translation transform.
+        if(t == null || t.isEmpty()) {
+            lastTransform = null;
+        }
+        else {
+            lastTransform = t.get(t.size()-1);
+        }
+
+        if(!(lastTransform instanceof CTranslation)) {
+            lastTransform = null;
+        }
+
+        if(lastTransform == null) {
+            CTranslation trans = new CTranslation(hovering);
+            Vector<Integer> v = new Vector<>(2);
+            v.add((int) (event.getX() - pressedX));
+            v.add((int) (event.getY() - pressedY));
+            trans.setDirection(v);
+            hovering.addTransform(trans);
+            mDrawableList.add(trans);
+            mUndoList.clear();
+        }
+        else {
+            //Last transform was a translation. Replace translation with new coordinates.
+            CTranslation trans = (CTranslation) lastTransform;
+            Vector<Integer> oldV = trans.getDirection();
+            Vector<Integer> v = new Vector<>(2);
+            v.add((int) (event.getX() - pressedX));
+            v.add((int) (event.getY() - pressedY));
+            trans.setDirection(v);
+        }
     }
 
 
