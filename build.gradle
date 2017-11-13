@@ -54,10 +54,11 @@ task javadoc(type: Javadoc) {
 
 def fabric_view_destination = ""
 
-task copyMyAar(dependsOn: "assembleDebug") {
+task copyAar(dependsOn: "assembleDebug") {
 
     //Add this to your local.properties file:
     //fabric_view_destination=/other/project/folder/libs
+
     Properties properties = new Properties()
     properties.load(project.rootProject.file('local.properties').newDataInputStream())
     fabric_view_destination = properties.getProperty('fabric_view_destination')
