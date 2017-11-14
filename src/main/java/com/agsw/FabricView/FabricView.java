@@ -103,6 +103,7 @@ public class FabricView extends View {
     private float pressedX;
     private float pressedY;
     private CDrawable hovering = null;
+    private CTranslation hoveringTranslation = null;
 
     private int mColor = Color.BLACK;
     private int savePoint = 0;
@@ -506,6 +507,10 @@ public class FabricView extends View {
                         return true;
                     }
                     selected = hovering;
+                    if(hovering != null) {
+                        hovering.removeTransform(hoveringTranslation);
+                        mDrawableList.remove(hoveringTranslation);
+                    }
                 } else if (distance > MAX_CLICK_DISTANCE) {
                     //It was a drag. Move the object there.
                     if (hovering != null) {
@@ -514,10 +519,15 @@ public class FabricView extends View {
                 }
                 invalidate();
                 hovering = null;
+                hoveringTranslation = null;
                 return true;
             case MotionEvent.ACTION_CANCEL:
                 if(hovering != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
+                    hovering.removeTransform(hoveringTranslation);
+                    mDrawableList.remove(hoveringTranslation);
+                    hovering = null;
+                    hoveringTranslation = null;
                 }
                 return true;
 
@@ -532,38 +542,22 @@ public class FabricView extends View {
             return; //Movement too small
         }
 
-        List<CTransform> t = hovering.getTransforms();
-        CTransform lastTransform;
-        //Find last translation transform.
-        if(t == null || t.isEmpty()) {
-            lastTransform = null;
-        }
-        else {
-            lastTransform = t.get(t.size()-1);
-        }
-
-        if(!(lastTransform instanceof CTranslation)) {
-            lastTransform = null;
-        }
-
-        if(lastTransform == null) {
-            CTranslation trans = new CTranslation(hovering);
+        if(hoveringTranslation == null) {
+            hoveringTranslation = new CTranslation(hovering);
             Vector<Integer> v = new Vector<>(2);
             v.add((int) (event.getX() - pressedX));
             v.add((int) (event.getY() - pressedY));
-            trans.setDirection(v);
-            hovering.addTransform(trans);
-            mDrawableList.add(trans);
+            hoveringTranslation.setDirection(v);
+            hovering.addTransform(hoveringTranslation);
+            mDrawableList.add(hoveringTranslation);
             mUndoList.clear();
         }
         else {
             //Last transform was a translation. Replace translation with new coordinates.
-            CTranslation trans = (CTranslation) lastTransform;
-            Vector<Integer> oldV = trans.getDirection();
             Vector<Integer> v = new Vector<>(2);
             v.add((int) (event.getX() - pressedX));
             v.add((int) (event.getY() - pressedY));
-            trans.setDirection(v);
+            hoveringTranslation.setDirection(v);
         }
     }
 
