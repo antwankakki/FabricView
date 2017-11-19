@@ -930,7 +930,7 @@ public class FabricView extends View {
      * Deletes all CDrawables that were added after the last call to markSaved().
      */
     public void revertUnsaved() {
-        List<CDrawable> unsaved = getUnsavedDrawablesList();
+        List<CDrawable> unsaved = new ArrayList<>(getUnsavedDrawablesList());
         for (CDrawable d :
                 unsaved) {
             deleteDrawable(d);
