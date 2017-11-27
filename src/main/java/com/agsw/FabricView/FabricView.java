@@ -106,10 +106,11 @@ public class FabricView extends View {
     private CTranslation hoveringTranslation = null;
 
     private int mColor = Color.BLACK;
-    private int savePoint = 0;
+    private int savePoint = -1;
     private Bitmap deleteIcon;
     private RectF deleteIconPosition = new RectF(-1, -1, -1, -1);
     private DeletionListener deletionListener = null;
+    private DeletionConfirmationListener deletionConfirmationListener = null;
 
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
@@ -736,7 +737,7 @@ public class FabricView extends View {
         mDrawableList.clear();
         currentPath = null;
         mUndoList.clear();
-        savePoint = 0;
+        savePoint = -1;
         // request to redraw the canvas
         invalidate();
     }
@@ -905,35 +906,36 @@ public class FabricView extends View {
      * Indicates that all CDrawables in the list have been saved.
      */
     public void markSaved() {
-        savePoint = mDrawableList.size();
+        savePoint = mDrawableList.size()-1;
     }
 
     /**
      * @return true if there were no new operations done after the last call to markSaved().
      */
     public boolean isSaved() {
-        return savePoint == mDrawableList.size();
+        return savePoint < mDrawableList.size();
     }
 
     /**
      * @return The list of all CDrawables that have been added after the last call to markSaved().
      */
     public List<CDrawable> getUnsavedDrawablesList() {
-        if (savePoint > mDrawableList.size()) {
+        if (savePoint >= mDrawableList.size()) {
             //Some things were deleted.
             return new ArrayList<>();
         }
-        return mDrawableList.subList(savePoint, mDrawableList.size());
+        return mDrawableList.subList(savePoint+1, mDrawableList.size());
     }
 
     /**
      * Deletes all CDrawables that were added after the last call to markSaved().
+     * Does not trigger DeletionConfirmationListener.
      */
     public void revertUnsaved() {
         List<CDrawable> unsaved = new ArrayList<>(getUnsavedDrawablesList());
         for (CDrawable d :
                 unsaved) {
-            deleteDrawable(d);
+            deletionConfirmed(d);
         }
     }
 
@@ -984,21 +986,43 @@ public class FabricView extends View {
     }
 
     /**
-     * Removes a specific CDrawable.
+     * Removes a specific CDrawable, with confirmation if required.
      * @param drawable The object to remove.
      */
     public void deleteDrawable(CDrawable drawable) {
         if (drawable == null) {
             return;
         }
+        if (deletionConfirmationListener != null) {
+            deletionConfirmationListener.confirmDeletion(drawable);
+            return;
+        }
+        deletionConfirmed(drawable);
+    }
+
+    /**
+     * Removes a specific CDrawable, without confirmation. Must be called by your
+     * DeletionConfirmationListener.confirmDeletion() to finish the deletion.
+     * @param drawable The object to remove.
+     */
+    public void deletionConfirmed(CDrawable drawable) {
+        if (drawable == null) {
+            return;
+        }
         ArrayList<CDrawable> toDelete = new ArrayList<>();
         toDelete.add(drawable);
         toDelete.addAll(drawable.getTransforms());
-        mDrawableList.removeAll(toDelete);
+        for (CDrawable d :
+                toDelete) {
+            if(mDrawableList.indexOf(d) <= savePoint) {
+                savePoint--;
+            }
+            mDrawableList.remove(d);
+        }
+        mUndoList.add(drawable);
         if (deletionListener != null) {
             deletionListener.deleted(drawable);
         }
-        mUndoList.add(drawable);
         invalidate();
     }
 
@@ -1023,10 +1047,31 @@ public class FabricView extends View {
      */
     public interface DeletionListener {
         /**
-         * This method will be called whenever a CDrawable is deleted.
+         * This method will be called after a CDrawable is deleted.
          * @param drawable The object that was deleted.
          */
         void deleted(CDrawable drawable);
+    }
+
+    /**
+     * Setter for the listener that will confirm deletion. Refer to the Observer pattern.
+     * @param newListener The listener for any deletion confirmation request.
+     */
+    public void setDeletionConfirmationListener(DeletionConfirmationListener newListener) {
+        deletionConfirmationListener = newListener;
+    }
+
+    /**
+     * This interface must be implemented by a listener for confirming deletion. If confirmed,
+     * the listener must call confirmDeletion(CDrawable).
+     */
+    public interface DeletionConfirmationListener {
+        /**
+         * This method will be called before a CDrawable is deleted in order to confirm the deletion.
+         * If the deletion is allowed, call FabricView.deletionConfirmed(CDrawable).
+         * @param drawable The object that's about to be deleted.
+         */
+        void confirmDeletion(CDrawable drawable);
     }
 
     /**
