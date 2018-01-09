@@ -13,6 +13,7 @@ import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -36,57 +37,57 @@ import java.util.Vector;
  * How to use:
  * <H1>Layout</H1>
  * Create a view in your layout, like this: <pre>
- &lt;com.agsw.FabricView.FabricView
- android:id="@+id/my_fabric_view"
- android:layout_width="match_parent"
- android:layout_height="match_parent"
- android:padding="20dp"
- android:text="@string/my_fabric_view_title"
- /&gt;</pre>
+ * &lt;com.agsw.FabricView.FabricView
+ * android:id="@+id/my_fabric_view"
+ * android:layout_width="match_parent"
+ * android:layout_height="match_parent"
+ * android:padding="20dp"
+ * android:text="@string/my_fabric_view_title"
+ * /&gt;</pre>
  * <H1>Activity code</H1>
  * Retrieve and configure your FabricView: <pre>
-FabricView myFabricView = (FabricView) parent.findViewById(R.id.my_fabric_view); //Retrieve by ID
- //Configuration. All of which is optional. Defaults are marked with an asterisk here.
-myFabricView.setBackgroundMode(BACKGROUND_STYLE_BLANK); //Set the background style (BACKGROUND_STYLE_BLANK*, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_GRAPH_PAPER)
-
-myFabricView.setInteractionMode(FabricView.DRAW_MODE); //Set its draw mode (DRAW_MODE*, SELECT_MODE, ROTATE_MODE, LOCKED_MODE)
-myFabricView.setDeleteIcon(deleteIcon); //If you don't like the default delete icon
-myFabricView.setColor(R.color.purple); //Line color
-myFabricView.setSize(10); //Line width
-myFabricView.setSelectionColor(R.color.lightergray); //Selection box color
-//To be notified of any deletion:
-myFabricView.setDeletionListener(new FabricView.DeletionListener() {
-  public void deleted(CDrawable drawable) {
-    doSomethingAboutThis(drawable);
-  }
-});
-
-//Manipulations... The following functions could be attached to buttons of your choosing:
-myFabricView.cleanPage(); //Erases everything.
-myFabricView.undo(); //Cancels the last operation.
-myFabricView.redo(); //Reinstates the last undone operation.
-myFabricView.selectLastDrawn(); //Mark the last drawn object as selected.
-myFabricView.deSelect(); //Unmark all objects for selection.
-myFabricView.deleteSelection(); //Removes all selected objects and its transforms.
-myFabricView.deleteDrawable(); //Removes a single object and its transforms.
-
-//Retrieving the picture from the view:
-Bitmap fullResult = myFabricView.getCanvasBitmap(); //Gets a copy of the whole view. This includes decorations such as selection rectangle. So make sure you switch to LOCKED_MODE before calling.
-Bitmap croppedResult = myFabricView.getCroppedCanvasBitmap(); //Same as previous, except with no margin around the picture.
-List&lt;CDrabable&gt; drawablesList = myFabricView.getDrawablesList(); //Returns all the drawables of the view. See next sections.
-CDrawable currentSelection = myFabricView.getSelection();
-
-//Save point functions
-boolean everythingIsSaved = myFabricView.isSaved(); //true = there were no operations added or undone after the last call to markSaved().
-markSaved(); //Indicates that everything was saved. You can save the bitmap or the drawable objects. (See previous section.)
-revertUnsaved(); //Restore the drawables to the last save point.
-List&lt;CDrabable&gt; unsavedDrawablesList = getUnsavedDrawablesList(); //Returns all the drawables that were not saved yet.</pre>
+ * FabricView myFabricView = (FabricView) parent.findViewById(R.id.my_fabric_view); //Retrieve by ID
+ * //Configuration. All of which is optional. Defaults are marked with an asterisk here.
+ * myFabricView.setBackgroundMode(BACKGROUND_STYLE_BLANK); //Set the background style (BACKGROUND_STYLE_BLANK*, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_GRAPH_PAPER)
+ * <p>
+ * myFabricView.setInteractionMode(FabricView.DRAW_MODE); //Set its draw mode (DRAW_MODE*, SELECT_MODE, ROTATE_MODE, LOCKED_MODE)
+ * myFabricView.setDeleteIcon(deleteIcon); //If you don't like the default delete icon
+ * myFabricView.setColor(R.color.purple); //Line color
+ * myFabricView.setSize(10); //Line width
+ * myFabricView.setSelectionColor(R.color.lightergray); //Selection box color
+ * //To be notified of any deletion:
+ * myFabricView.setDeletionListener(new FabricView.DeletionListener() {
+ * public void deleted(CDrawable drawable) {
+ * doSomethingAboutThis(drawable);
+ * }
+ * });
+ * <p>
+ * //Manipulations... The following functions could be attached to buttons of your choosing:
+ * myFabricView.cleanPage(); //Erases everything.
+ * myFabricView.undo(); //Cancels the last operation.
+ * myFabricView.redo(); //Reinstates the last undone operation.
+ * myFabricView.selectLastDrawn(); //Mark the last drawn object as selected.
+ * myFabricView.deSelect(); //Unmark all objects for selection.
+ * myFabricView.deleteSelection(); //Removes all selected objects and its transforms.
+ * myFabricView.deleteDrawable(); //Removes a single object and its transforms.
+ * <p>
+ * //Retrieving the picture from the view:
+ * Bitmap fullResult = myFabricView.getCanvasBitmap(); //Gets a copy of the whole view. This includes decorations such as selection rectangle. So make sure you switch to LOCKED_MODE before calling.
+ * Bitmap croppedResult = myFabricView.getCroppedCanvasBitmap(); //Same as previous, except with no margin around the picture.
+ * List&lt;CDrabable&gt; drawablesList = myFabricView.getDrawablesList(); //Returns all the drawables of the view. See next sections.
+ * CDrawable currentSelection = myFabricView.getSelection();
+ * <p>
+ * //Save point functions
+ * boolean everythingIsSaved = myFabricView.isSaved(); //true = there were no operations added or undone after the last call to markSaved().
+ * markSaved(); //Indicates that everything was saved. You can save the bitmap or the drawable objects. (See previous section.)
+ * revertUnsaved(); //Restore the drawables to the last save point.
+ * List&lt;CDrabable&gt; unsavedDrawablesList = getUnsavedDrawablesList(); //Returns all the drawables that were not saved yet.</pre>
  * <H1>Drawables and Transforms</H1>
  * The list of visible objects inside the view is a stack. There are two kinds: CDrawable and CTransform (subclass of the latter).
  * A CDrawable is an object that can be "drawn" on the canvas. A CTransform represents a modification of a CDrawable.
  * A CDrawable is linked to its CTransforms (see getTransforms() and hasTransforms()), and each CTransform is aware of its
  * CDrawable (see getDrawable()).
- *
+ * <p>
  * The subclasses of CDrawable are CPath (a set of continuous lines), CBitmap, and CText. Another subclass is CTransform, and this one
  * has its one subclasses which are CRotation, CScale, and CTranslation.
  */
@@ -110,6 +111,8 @@ public class FabricView extends View {
     private Bitmap deleteIcon;
     private RectF deleteIconPosition = new RectF(-1, -1, -1, -1);
     private DeletionListener deletionListener = null;
+
+    private GestureDetector gestureDetector;
 
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
@@ -206,7 +209,7 @@ public class FabricView extends View {
     private Rect cropBounds = null;
 
     /**
-     *  Constructor, sets defaut values.
+     * Constructor, sets defaut values.
      *
      * @param context the activity that containts the view
      * @param attrs   view attributes
@@ -300,11 +303,10 @@ public class FabricView extends View {
                 ex.printStackTrace();
             }
         }
-        if(totalBounds.width() <= 0) {
+        if (totalBounds.width() <= 0) {
             //No bounds
             cropBounds = null;
-        }
-        else {
+        } else {
             cropBounds = totalBounds;
         }
     }
@@ -329,6 +331,7 @@ public class FabricView extends View {
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
         // delegate action to the correct method
         if (getInteractionMode() == DRAW_MODE)
             return onTouchDrawMode(event);
@@ -478,24 +481,24 @@ public class FabricView extends View {
                         continue;
                     }
                     Rect rect = d.computeBounds();
-                    if (rect.contains((int)pressedX, (int)pressedY)) {
+                    if (rect.contains((int) pressedX, (int) pressedY)) {
                         hovering = d;
                         break;
                     }
                 }
-                if(hovering != null) {
+                if (hovering != null) {
                     getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if(hovering == null) {
+                if (hovering == null) {
                     break; //Nothing is being dragged.
                 }
                 updateHoveringPosition(event);
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
-                if(hovering != null) {
+                if (hovering != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
                 }
                 long pressDuration = SystemClock.uptimeMillis() - pressStartTime;
@@ -507,7 +510,7 @@ public class FabricView extends View {
                         return true;
                     }
                     selected = hovering;
-                    if(hovering != null) {
+                    if (hovering != null) {
                         hovering.removeTransform(hoveringTranslation);
                         mDrawableList.remove(hoveringTranslation);
                     }
@@ -522,7 +525,7 @@ public class FabricView extends View {
                 hoveringTranslation = null;
                 return true;
             case MotionEvent.ACTION_CANCEL:
-                if(hovering != null) {
+                if (hovering != null) {
                     getParent().requestDisallowInterceptTouchEvent(false);
                     hovering.removeTransform(hoveringTranslation);
                     mDrawableList.remove(hoveringTranslation);
@@ -542,7 +545,7 @@ public class FabricView extends View {
             return; //Movement too small
         }
 
-        if(hoveringTranslation == null) {
+        if (hoveringTranslation == null) {
             hoveringTranslation = new CTranslation(hovering);
             Vector<Integer> v = new Vector<>(2);
             v.add((int) (event.getX() - pressedX));
@@ -551,8 +554,7 @@ public class FabricView extends View {
             hovering.addTransform(hoveringTranslation);
             mDrawableList.add(hoveringTranslation);
             mUndoList.clear();
-        }
-        else {
+        } else {
             //Last transform was a translation. Replace translation with new coordinates.
             Vector<Integer> v = new Vector<>(2);
             v.add((int) (event.getX() - pressedX));
@@ -657,7 +659,7 @@ public class FabricView extends View {
      * @param p    the paint to use. This is used for the TextSize, color. If null, the defaut is black with 20sp size.
      */
     public void drawText(String text, int x, int y, Paint p) {
-        if(p==null) {
+        if (p == null) {
             int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 20, getContext().getResources().getDisplayMetrics());
             p = new Paint();
             p.setTextSize(px);
@@ -700,8 +702,8 @@ public class FabricView extends View {
             CDrawable toUndo = mDrawableList.get(mDrawableList.size() - 1);
             mUndoList.add(toUndo);
             mDrawableList.remove(mDrawableList.size() - 1);
-            if(toUndo instanceof CTransform) {
-                CTransform t = (CTransform)toUndo;
+            if (toUndo instanceof CTransform) {
+                CTransform t = (CTransform) toUndo;
                 t.getDrawable().removeTransform(t);
             }
 
@@ -718,8 +720,8 @@ public class FabricView extends View {
             mDrawableList.add(toRedo);
             mDrawableList.addAll(toRedo.getTransforms());
             mUndoList.remove(toRedo);
-            if(toRedo instanceof CTransform) {
-                CTransform t = (CTransform)toRedo;
+            if (toRedo instanceof CTransform) {
+                CTransform t = (CTransform) toRedo;
                 t.getDrawable().addTransform(t);
             }
 
@@ -786,7 +788,7 @@ public class FabricView extends View {
      * @return Bitmap of the canvas, cropped.
      */
     public Bitmap getCroppedCanvasBitmap() {
-        if(cropBounds == null) {
+        if (cropBounds == null) {
             //No pixels at all
             return null;
         }
@@ -804,6 +806,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the the drawing line color.
+     *
      * @param mColor The new color.
      */
     public void setColor(int mColor) {
@@ -819,6 +822,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the background color.
+     *
      * @param mBackgroundColor The new background color.
      */
     public void setBackgroundColor(int mBackgroundColor) {
@@ -834,6 +838,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the background decorations mode. Can be BACKGROUND_STYLE_BLANK*, BACKGROUND_STYLE_NOTEBOOK_PAPER, or BACKGROUND_STYLE_GRAPH_PAPER.
+     *
      * @param mBackgroundMode
      */
     public void setBackgroundMode(int mBackgroundMode) {
@@ -850,6 +855,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the drawing style.
+     *
      * @param mStyle The new drawing style. Can be Can be FILL, STROKE, or FILL_AND_STROKE.
      */
     public void setStyle(Paint.Style mStyle) {
@@ -865,6 +871,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the line width. The default is 5.
+     *
      * @param mSize The new width for the line.
      */
     public void setSize(float mSize) {
@@ -880,6 +887,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the interaction mode. Can be DRAW_MODE, SELECT_MODE, ROTATE_MODE, or LOCKED_MODE.
+     *
      * @param interactionMode
      */
     public void setInteractionMode(int interactionMode) {
@@ -985,6 +993,7 @@ public class FabricView extends View {
 
     /**
      * Removes a specific CDrawable.
+     *
      * @param drawable The object to remove.
      */
     public void deleteDrawable(CDrawable drawable) {
@@ -1004,6 +1013,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the "delete" icon. The default is android.R.drawable.ic_menu_delete.
+     *
      * @param newIcon The new delete icon.
      */
     public void setDeleteIcon(Bitmap newIcon) {
@@ -1012,6 +1022,7 @@ public class FabricView extends View {
 
     /**
      * Setter for the deletion event listener. Refer to the Observer pattern.
+     *
      * @param newListener The listener for any deletion event.
      */
     public void setDeletionListener(DeletionListener newListener) {
@@ -1024,6 +1035,7 @@ public class FabricView extends View {
     public interface DeletionListener {
         /**
          * This method will be called whenever a CDrawable is deleted.
+         *
          * @param drawable The object that was deleted.
          */
         void deleted(CDrawable drawable);
@@ -1038,10 +1050,27 @@ public class FabricView extends View {
 
     /**
      * Setter for the selection rectangle color.
+     *
      * @param selectionColor The new selection rectangle color.
      */
     public void setSelectionColor(int selectionColor) {
         this.selectionColor = selectionColor;
+    }
+
+    /**
+     * @return The current gestureDetector instance
+     */
+    public GestureDetector getGestureDetector() {
+        return gestureDetector;
+    }
+
+    /**
+     * Setter for the gesture for singleTap and doubleTap.
+     *
+     * @param gestureDetector
+     */
+    public void setGestureDetector(GestureDetector gestureDetector) {
+        this.gestureDetector = gestureDetector;
     }
 
 }
