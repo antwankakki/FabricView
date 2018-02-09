@@ -24,7 +24,7 @@ public class CTranslation extends CTransform {
     }
 
     /**
-     * Constructor. You must call setDirection after calling this constructor.
+     * Constructor.
      * @param drawable The object this translation affects.
      * @param direction The direction of the translation. Two dimentional vector (x, y).
      */

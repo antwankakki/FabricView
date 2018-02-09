@@ -3,6 +3,7 @@ package com.agsw.FabricView.DrawableObjects;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 /**
@@ -62,7 +63,24 @@ public class CRotation extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
-        m.postRotate(mRotDegree);
+        if(mRotDegree == 0) {
+            //No rotation.
+            return;
+        }
+        Rect lastBounds = getDrawable().getLastBounds();
+        RectF rect = new RectF(lastBounds);
+        float centerX;
+        float centerY;
+        centerX = rect.centerX();
+        centerY = rect.centerY();
+        m.postRotate(mRotDegree, rect.centerX(),
+                rect.centerY());
+
+//        m.postRotate(mRotDegree, getXcoords(), getYcoords());
+    }
+
+    private boolean between(float value, float low, float high) {
+        return value >= low && value < high;
     }
 
     @Override

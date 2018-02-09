@@ -3,6 +3,7 @@ package com.agsw.FabricView.DrawableObjects;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 /**
@@ -10,6 +11,7 @@ import android.graphics.RectF;
  */
 
 public class CScale extends CTransform {
+    public static final int MINIMUM_SIZE = 10;
     private float mFactor = 0.0f;
 
     /**
@@ -42,8 +44,20 @@ public class CScale extends CTransform {
      * Setter for the scaling factor.
      * @param factor The new scaling factor. Set to number between 0 and 1 to shrink, or above 1 to grow.
      */
-    public void setFactor(float factor) {
-        mFactor = factor;
+    public void setFactor(float factor, float maxSize) {
+        Rect rect = getDrawable().getLastBounds();
+
+        float oldSize = Math.min(rect.width(), rect.height());
+        float newSize = oldSize * factor;
+        if(newSize < MINIMUM_SIZE) {
+            mFactor = MINIMUM_SIZE/oldSize;
+        }
+        else if (newSize > maxSize) {
+            mFactor = maxSize / oldSize;
+        }
+        else {
+            mFactor = factor;
+        }
     }
 
     @Override
@@ -62,7 +76,19 @@ public class CScale extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
+        if(mFactor == 1) {
+            //No scaling
+            return;
+        }
+
+        Rect lastBounds = getDrawable().getLastBounds();
+        final float deltaSX = ((mFactor * lastBounds.width()) - lastBounds.width()) / 2f;
+        final float deltaSY = ((mFactor * lastBounds.height()) - lastBounds.height()) / 2f;
+
         m.postScale(mFactor, mFactor);
+//        m.postTranslate(-deltaSX, -deltaSY);
+
+//        m.postTranslate(-getXcoords()/2, -getYcoords()/2);
     }
 
     @Override

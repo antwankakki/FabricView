@@ -1,7 +1,6 @@
 package com.agsw.FabricView;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -14,16 +13,18 @@ import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Toast;
 
 import com.agsw.FabricView.DrawableObjects.CBitmap;
 import com.agsw.FabricView.DrawableObjects.CDrawable;
 import com.agsw.FabricView.DrawableObjects.CPath;
+import com.agsw.FabricView.DrawableObjects.CRotation;
+import com.agsw.FabricView.DrawableObjects.CScale;
 import com.agsw.FabricView.DrawableObjects.CText;
 import com.agsw.FabricView.DrawableObjects.CTransform;
 import com.agsw.FabricView.DrawableObjects.CTranslation;
-import com.agsw.inputview.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +90,11 @@ List&lt;CDrabable&gt; unsavedDrawablesList = getUnsavedDrawablesList(); //Return
  *
  * The subclasses of CDrawable are CPath (a set of continuous lines), CBitmap, and CText. Another subclass is CTransform, and this one
  * has its one subclasses which are CRotation, CScale, and CTranslation.
+ *
+ * The rotate mode allows both rotation and scaling. The rotate mode must be set by you.
+ * It can be triggered by an external mean (e.g. a button) or by a pinch gesture internally.
+ * If you want to use a pinch gesture to start the rotate mode, use setRotationListener()
+ * and in the listener's startRotate() return 'true'.
  */
 public class FabricView extends View {
 
@@ -115,6 +121,9 @@ public class FabricView extends View {
     // Canvas interaction modes
     private int mInteractionMode = DRAW_MODE;
 
+    //Mode prior to rotation.
+    private Integer mOldInteractionMode = null;
+
     // background color of the library
     private int mBackgroundColor = Color.WHITE;
     // default style for the library
@@ -136,6 +145,18 @@ public class FabricView extends View {
 
     // Flag indicating that we are waiting for a location for the text
     private boolean mTextExpectTouch;
+
+    //This handles gestures for the PinchGestureListener and ROTATE_MODE.
+    private ScaleRotationGestureDetector mScaleDetector;
+
+    //This is a listener for pinching gestures.
+    private ScaleRotateListener mScaleRotateListener;
+
+    //During a rotation gesture, this is the rotation of the selected object.
+    private CRotation mCurrentRotation;
+
+    //During a rotation gesture, this is the scale of the selected object.
+    private CScale mCurrentScale;
 
     // Vars to decrease dirty area and increase performance
     private float lastTouchX, lastTouchY;
@@ -178,9 +199,9 @@ public class FabricView extends View {
      */
     public static final int SELECT_MODE = 1;
     /**
-     * Interactive modes: Will let the user rotate objects. This is not yet supported.
+     * Interactive modes: Will let the user rotate and scale objects.
      */
-    public static final int ROTATE_MODE = 2; // TODO Support Object Rotation.
+    public static final int ROTATE_MODE = 2;
     /**
      * Interactive modes: Will remove all decorations and the user won't be able to modify anything. This is the mode to use when retrieving the bitmaps with getCroppedCanvasBitmap() or getCanvasBitmap().
      */
@@ -232,6 +253,94 @@ public class FabricView extends View {
 
         deleteIcon = BitmapFactory.decodeResource(context.getResources(),
                 android.R.drawable.ic_menu_delete);
+
+        mScaleDetector = new ScaleRotationGestureDetector(context, new ScaleRotationGestureDetector.OnScaleRotationGestureListener() {
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector detector) {
+                handleScaleEnd();
+            }
+
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
+                return handleScaleBegin((ScaleRotationGestureDetector) detector);
+            }
+
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                return handleScale((ScaleRotationGestureDetector) detector);
+            }
+
+            @Override
+            public boolean onRotate(ScaleRotationGestureDetector detector) {
+                return handleScale((ScaleRotationGestureDetector) detector);
+            }
+
+        });
+    }
+
+    private boolean handleScaleBegin(ScaleRotationGestureDetector detector) {
+        boolean consumed = false;
+        if(mScaleRotateListener != null && selected != null) {
+            try {
+                consumed = mScaleRotateListener.startRotate();
+                if(consumed) {
+                    mOldInteractionMode = mInteractionMode;
+                    setInteractionMode(ROTATE_MODE);
+                    mCurrentRotation = new CRotation(selected);
+                    mCurrentScale = new CScale(selected);
+                    selected.addTransform(mCurrentRotation);
+                    mDrawableList.add(mCurrentRotation);
+                    selected.addTransform(mCurrentScale);
+                    mDrawableList.add(mCurrentScale);
+
+                    handleScale(detector);
+                }
+            }
+            catch(Exception e) {
+                //Do nothing.
+            }
+        }
+        return consumed;
+    }
+
+    private void handleScaleEnd() {
+        if(mScaleRotateListener != null) {
+            try {
+                mScaleRotateListener.endRotate();
+                if(mOldInteractionMode != null) {
+                    setInteractionMode(mOldInteractionMode);
+                    mOldInteractionMode = null;
+                }
+                mCurrentScale = null;
+                mCurrentRotation = null;
+            }
+            catch(Exception e) {
+                //Do nothing.
+            }
+        }
+    }
+
+    public void setScaleRotateListener(ScaleRotateListener listener) {
+        mScaleRotateListener = listener;
+    }
+
+    /**
+     * This interface is used to decide what to do when the user does a pinch gesture for
+     * rotating and resizing.
+     */
+    public interface ScaleRotateListener {
+
+        /**
+         * If you want FabricView to hanlde rotations and resizing, return true.
+         * @return true if the rotation will be handled by the FabricView. false to ignore the guesture.
+         */
+        boolean startRotate();
+
+        /**
+         * Called when the rotation gesture is done.
+         */
+        void endRotate();
     }
 
     @Override
@@ -330,13 +439,17 @@ public class FabricView extends View {
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+
+        //ROTATE_MODE is processed inside this:
+        mScaleDetector.onTouchEvent(event);
+        if(mScaleDetector.isInProgress()) {
+            return true;
+        }
         // delegate action to the correct method
         if (getInteractionMode() == DRAW_MODE)
             return onTouchDrawMode(event);
         if (getInteractionMode() == SELECT_MODE)
             return onTouchSelectMode(event);
-        if (getInteractionMode() == ROTATE_MODE)
-            return onTouchRotateMode(event);
         // if none of the above are selected, delegate to locked mode
         return onTouchLockedMode(event);
     }
@@ -353,13 +466,20 @@ public class FabricView extends View {
     }
 
     /**
-     * Handles the touch input if the mode is set to rotate
-     *
-     * @param event the touch event
-     * @return the result of the action
+     * Takes care of scaling and rotating.
+     * @return true if the scaling gesture is consumed.
      */
-    private boolean onTouchRotateMode(MotionEvent event) {
-        return false;
+    private boolean handleScale(ScaleRotationGestureDetector detector) {
+        if(mInteractionMode != ROTATE_MODE) {
+            return false;
+        }
+        Rect rect = selected.getLastBounds();
+        mCurrentScale.setFactor(detector.getScaleFactor(), Math.min(getWidth(), getHeight()));
+
+        mCurrentRotation.setRotation((int)detector.getRotation());
+
+        invalidate();
+        return true;
     }
 
     private static final float TOUCH_TOLERANCE = 4;
@@ -408,7 +528,7 @@ public class FabricView extends View {
                 getParent().requestDisallowInterceptTouchEvent(true);
                 break;
             case MotionEvent.ACTION_CANCEL:
-                getParent().requestDisallowInterceptTouchEvent(true);
+                getParent().requestDisallowInterceptTouchEvent(false);
                 break;
             case MotionEvent.ACTION_MOVE:
                 float dx = Math.abs(eventX - lastTouchX);
@@ -573,7 +693,9 @@ public class FabricView extends View {
      * @param backgroundMode one of BACKGROUND_STYLE_GRAPH_PAPER, BACKGROUND_STYLE_NOTEBOOK_PAPER, BACKGROUND_STYLE_BLANK
      */
     public void drawBackground(Canvas canvas, int backgroundMode) {
-        canvas.drawColor(mBackgroundColor);
+        if(mBackgroundColor != Color.TRANSPARENT) {
+            canvas.drawColor(mBackgroundColor);
+        }
         if (backgroundMode != BACKGROUND_STYLE_BLANK) {
             Paint linePaint = new Paint();
             linePaint.setColor(Color.argb(50, 0, 0, 0));
@@ -792,7 +914,22 @@ public class FabricView extends View {
             return null;
         }
         Bitmap mCanvasBitmap = getCanvasBitmap();
-        Bitmap cropped = Bitmap.createBitmap(mCanvasBitmap, cropBounds.left, cropBounds.top, cropBounds.width(), cropBounds.height());
+
+        Rect size = new Rect(cropBounds);
+        if(size.left < 0) {
+            size.left = 0;
+        }
+        if(size.top < 0) {
+            size.top = 0;
+        }
+        if(size.right > mCanvasBitmap.getWidth()) {
+            size.right = mCanvasBitmap.getWidth();
+        }
+        if(size.bottom > mCanvasBitmap.getHeight()) {
+            size.bottom = mCanvasBitmap.getHeight();
+        }
+
+        Bitmap cropped = Bitmap.createBitmap(mCanvasBitmap, size.left, size.top, size.width(), size.height());
         return cropped;
     }
 
@@ -994,7 +1131,12 @@ public class FabricView extends View {
             return;
         }
         if (deletionConfirmationListener != null) {
-            deletionConfirmationListener.confirmDeletion(drawable);
+            try {
+                deletionConfirmationListener.confirmDeletion(drawable);
+            }
+            catch(Exception e) {
+                //Do nothing
+            }
             return;
         }
         deletionConfirmed(drawable);
@@ -1021,7 +1163,12 @@ public class FabricView extends View {
         }
         mUndoList.add(drawable);
         if (deletionListener != null) {
-            deletionListener.deleted(drawable);
+            try {
+                deletionListener.deleted(drawable);
+            }
+            catch(Exception e) {
+                //Do nothing
+            }
         }
         invalidate();
     }
