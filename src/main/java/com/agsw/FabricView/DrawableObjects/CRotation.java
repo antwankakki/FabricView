@@ -3,6 +3,7 @@ package com.agsw.FabricView.DrawableObjects;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 /**
@@ -16,19 +17,25 @@ public class CRotation extends CTransform {
     /**
      * Constructor. You must call setRotation after calling this contructor.
      * @param drawable The object this rotation affects.
+     * @param x The center of rotation.
+     * @param y The center of rotation.
      */
-    public CRotation(CDrawable drawable) {
-        setDrawable(drawable);
+    public CRotation(CDrawable drawable, int x, int y) {
+        this(drawable, 0, x, y);
     }
 
     /**
      * Constructor.
      * @param drawable The object this rotation affects.
      * @param rotation The number of degrees for this rotation.
+     * @param x The center of rotation.
+     * @param y The center of rotation.
      */
-    public CRotation(CDrawable drawable, int rotation) {
+    public CRotation(CDrawable drawable, int rotation, int x, int y) {
         setDrawable(drawable);
         mRotDegree = rotation;
+        setXcoords(x);
+        setYcoords(y);
     }
 
     /**
@@ -62,7 +69,17 @@ public class CRotation extends CTransform {
 
     @Override
     public void applyTransform(Matrix m) {
-        m.postRotate(mRotDegree);
+        if(mRotDegree == 0) {
+            //No rotation.
+            return;
+        }
+        m.postRotate(mRotDegree, getXcoords(),
+                getYcoords());
+
+    }
+
+    private boolean between(float value, float low, float high) {
+        return value >= low && value < high;
     }
 
     @Override

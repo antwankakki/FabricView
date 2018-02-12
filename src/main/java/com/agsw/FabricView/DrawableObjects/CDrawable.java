@@ -27,6 +27,7 @@ public abstract class CDrawable {
     private int x, y, height, width;
     private Paint mPaint;
     private List<CTransform> mTransforms = new ArrayList<>();
+    private Rect lastBounds = null;
 
     /**
      * If you call this constructor, you MUST call setXCoord(), setYCoord(), setHeight(), setWidth()
@@ -156,10 +157,20 @@ public abstract class CDrawable {
             t.applyTransform(m);
         }
         m.mapRect(bounds);
-        Rect result = new Rect();
-        bounds.round(result);
-        return result;
+        lastBounds = new Rect();
+        bounds.round(lastBounds);
+        return lastBounds;
+    }
 
+    public Rect getLastBounds() {
+        if(lastBounds == null) {
+            int x = getXcoords();
+            int y = getYcoords();
+            int r = x + getWidth();
+            int b = y + getHeight();
+            lastBounds = new Rect(x, y, r, b);
+        }
+        return lastBounds;
     }
 
     /**
