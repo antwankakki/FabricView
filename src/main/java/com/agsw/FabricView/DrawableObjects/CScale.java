@@ -18,19 +18,25 @@ public class CScale extends CTransform {
      * Constructor.
      * You must call setDirection after calling this constructor.
      * @param drawable The object this scaling affects.
+     * @param x The center of scale.
+     * @param y The center of scale.
      */
-    public CScale(CDrawable drawable) {
-        setDrawable(drawable);
+    public CScale(CDrawable drawable, int x, int y) {
+        this(drawable, 1, x, y);
     }
 
     /**
      * Constructor.
      * @param drawable The object this scaling affects.
      * @param factor The scaling amount. Set to number between 0 and 1 to shrink, or above 1 to grow.
+     * @param x The center of scale.
+     * @param y The center of scale.
      */
-    public CScale(CDrawable drawable, float factor) {
+    public CScale(CDrawable drawable, float factor, int x, int y) {
         setDrawable(drawable);
         mFactor = factor;
+        setXcoords(x);
+        setYcoords(y);
     }
 
     /**
@@ -81,14 +87,10 @@ public class CScale extends CTransform {
             return;
         }
 
-        Rect lastBounds = getDrawable().getLastBounds();
-        final float deltaSX = ((mFactor * lastBounds.width()) - lastBounds.width()) / 2f;
-        final float deltaSY = ((mFactor * lastBounds.height()) - lastBounds.height()) / 2f;
-
         m.postScale(mFactor, mFactor);
-//        m.postTranslate(-deltaSX, -deltaSY);
-
-//        m.postTranslate(-getXcoords()/2, -getYcoords()/2);
+        float x = (getXcoords()*mFactor)/2;
+        float y = (getYcoords()*mFactor)/2;
+        m.postTranslate(-x, -y);
     }
 
     @Override

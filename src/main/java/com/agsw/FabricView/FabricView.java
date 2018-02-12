@@ -287,8 +287,8 @@ public class FabricView extends View {
                 if(consumed) {
                     mOldInteractionMode = mInteractionMode;
                     setInteractionMode(ROTATE_MODE);
-                    mCurrentRotation = new CRotation(selected);
-                    mCurrentScale = new CScale(selected);
+                    mCurrentRotation = new CRotation(selected, selected.getLastBounds().centerX(), selected.getLastBounds().centerY());
+                    mCurrentScale = new CScale(selected, selected.getLastBounds().centerX(), selected.getLastBounds().centerY());
                     selected.addTransform(mCurrentRotation);
                     mDrawableList.add(mCurrentRotation);
                     selected.addTransform(mCurrentScale);
@@ -473,7 +473,6 @@ public class FabricView extends View {
         if(mInteractionMode != ROTATE_MODE) {
             return false;
         }
-        Rect rect = selected.getLastBounds();
         mCurrentScale.setFactor(detector.getScaleFactor(), Math.min(getWidth(), getHeight()));
 
         mCurrentRotation.setRotation((int)detector.getRotation());

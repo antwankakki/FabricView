@@ -17,19 +17,25 @@ public class CRotation extends CTransform {
     /**
      * Constructor. You must call setRotation after calling this contructor.
      * @param drawable The object this rotation affects.
+     * @param x The center of rotation.
+     * @param y The center of rotation.
      */
-    public CRotation(CDrawable drawable) {
-        setDrawable(drawable);
+    public CRotation(CDrawable drawable, int x, int y) {
+        this(drawable, 0, x, y);
     }
 
     /**
      * Constructor.
      * @param drawable The object this rotation affects.
      * @param rotation The number of degrees for this rotation.
+     * @param x The center of rotation.
+     * @param y The center of rotation.
      */
-    public CRotation(CDrawable drawable, int rotation) {
+    public CRotation(CDrawable drawable, int rotation, int x, int y) {
         setDrawable(drawable);
         mRotDegree = rotation;
+        setXcoords(x);
+        setYcoords(y);
     }
 
     /**
@@ -67,16 +73,9 @@ public class CRotation extends CTransform {
             //No rotation.
             return;
         }
-        Rect lastBounds = getDrawable().getLastBounds();
-        RectF rect = new RectF(lastBounds);
-        float centerX;
-        float centerY;
-        centerX = rect.centerX();
-        centerY = rect.centerY();
-        m.postRotate(mRotDegree, rect.centerX(),
-                rect.centerY());
+        m.postRotate(mRotDegree, getXcoords(),
+                getYcoords());
 
-//        m.postRotate(mRotDegree, getXcoords(), getYcoords());
     }
 
     private boolean between(float value, float low, float high) {
