@@ -1,9 +1,9 @@
 pipeline {
   agent any
   stages {
-    stage('') {
+    stage('Stage 1') {
       steps {
-        withGradle()
+        echo 'Hello world!'
       }
     }
 

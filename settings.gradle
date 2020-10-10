@@ -1,0 +1,4 @@
+rootProject.name='FabricView'
+include ':app'
+include ':fabricviewlib'
+

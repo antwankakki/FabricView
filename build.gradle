@@ -1,68 +1,24 @@
-
 buildscript {
+    ext.kotlin_version = '1.4.10'
     repositories {
-        mavenCentral()
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
-        }
+        google()
+        jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath 'com.android.tools.build:gradle:4.0.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
+allprojects {
+    repositories {
+        google()
+        jcenter()
 
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.2"
-
-    defaultConfig {
-        minSdkVersion 17
-        targetSdkVersion 26
-        versionCode 1
-        versionName "0.1"
-    }
-    buildTypes {
-        debug {
-            minifyEnabled false
-            useProguard false
-        }
-
-        release {
-            minifyEnabled false
-            useProguard false
-        }
     }
 }
 
-dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-}
-
-task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    destinationDir = file("docs/")
-    failOnError false
-    exclude '**/BuildConfig.java'
-    exclude '**/R.java'
-}
-
-def fabric_view_destination = ""
-
-task copyAar(dependsOn: "assembleDebug") {
-
-    //Add this to your local.properties file:
-    //fabric_view_destination=/other/project/folder/libs
-
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    fabric_view_destination = properties.getProperty('fabric_view_destination')
-    println 'fabric_view_destination=' + fabric_view_destination
-
-    ant.copy(file: 'build/outputs/aar/' + project.name + '-debug.aar', todir: fabric_view_destination)
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
