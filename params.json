@@ -1,1 +1,7 @@
-{"name":"FabricView","tagline":"A new canvas drawing library for Android. ","body":"### Background\r\nThe library was born as part of a project in SD Hacks (www.sdhacks.io) on October 3rd. It is currently under construction and will be refactored and polished in the coming weeks! Stay tuned.\r\n\r\n\r\n###Screenshots\r\n\r\n\r\n![Screenshot 1](http://imgur.com/O5O6oAM.jpeg)\r\n![Screenshot 2](http://imgur.com/XdQAAQ1.jpeg)\r\n\r\n\r\n","google":"UA-68709380-1","note":"Don't delete this file! It's used internally to help with page regeneration."}
+{
+  "name": "FabricView",
+  "tagline": "A new canvas drawing library for Android. ",
+  "body": "### Background\r\nThe library was born as part of a project in SD Hacks (www.sdhacks.io) on October 3rd. It is currently under construction and will be refactored and polished in the coming weeks! Stay tuned.\r\n\r\n\r\n###Screenshots\r\n\r\n\r\n![Screenshot 1](http://imgur.com/O5O6oAM.jpeg)\r\n![Screenshot 2](http://imgur.com/XdQAAQ1.jpeg)\r\n\r\n\r\n",
+  "google": "UA-68709380-1",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
