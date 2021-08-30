@@ -3,21 +3,58 @@ name: Android CI
 on: [push]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  build-and-test:
+    name: Build and Run Tests
+    # runs-on: ubuntu-latest
+    runs-on: macos-latest # Switched to macOS
 
     steps:
-    - uses: actions/checkout@v2
-    - name: set up JDK 1.8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
-    - name: Grant permission
-        run: chmod +x FabricView/gradlew
-    - name: Run lint
-        run: cd FabricView && ./gradlew lintDebug
-      with:
-        lint_xml_file_path: 'reports/lint/**/**.xml' # change your lint result path
-    - name: Build with Gradle
-      run: ./gradlew build
+      - uses: actions/checkout@v2
+      - name: set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Run JUnit Test
+        run:  ./gradlew testDebugUnitTest
+
+      - name: Run Instrumentation Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86
+          profile: Nexus 6
+          avd-name: test
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew connectedCheck
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v1
+        with:
+          name: reports
+          path: app/build/reports
+
+  generate-apk:
+    name: Generate apk
+    runs-on: ubuntu-latest
+    needs:
+      - build-and-test
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Generate apk
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v1
+        with:
+          name: build-output
+          path: app/build/outputs/apk/debug/app-debug.apk
